@@ -210,7 +210,7 @@ export default function DamageReportCard({
       {(isResolved || done) && (
         <div className="px-5 py-3.5">
           {adminNote && (
-            <p className="text-[12px] text-brand-dark/55 italic">"{adminNote}"</p>
+            <p className="text-[12px] text-brand-dark/55 italic">&quot;{adminNote}&quot;</p>
           )}
           {done && !adminNote && (
             <p className="text-[12px] text-brand-dark/40">Classification saved.</p>
