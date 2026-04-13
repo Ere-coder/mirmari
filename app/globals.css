@@ -1,0 +1,59 @@
+/* ── MirMari Global Styles ──────────────────────────────────────────────────
+   Base stylesheet. Tailwind utilities are used for most styling; this file
+   handles things that Tailwind can't express as utilities: safe area insets,
+   full-screen PWA layout, and the Cormorant Garamond font import.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Cormorant Garamond — used ONLY for the MirMari wordmark and slogan (spec §DESIGN SYSTEM) */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+
+/* ── Base resets ────────────────────────────────────────────────────────────
+   Full-screen mobile layout: no scrollbars on body, 100dvh for dynamic
+   viewport height (accounts for browser chrome on mobile).               */
+html,
+body {
+  height: 100%;
+  background-color: #FAF8F3; /* brand-bg — fills the sides on desktop too */
+  color: #1E1420;             /* brand-dark — replaces black throughout */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Safe area insets — spec §PWA AND LAYOUT ───────────────────────────────
+   env(safe-area-inset-*) accounts for notch and home indicator on iOS.
+   The #app-shell div uses these so content never hides behind hardware UI. */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* ── App shell: centered 480px column — spec §PWA AND LAYOUT ───────────────
+   The #app-shell wrapper keeps all content within the 480px mobile column
+   regardless of desktop viewport width. The sides show brand-bg (#FAF8F3). */
+#app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  background-color: #FAF8F3;
+  /* Apply safe area insets as padding so content never hides under hardware UI */
+  padding-top: var(--sat);
+  padding-bottom: var(--sab);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+}
+
+/* ── Utility: full-bleed inside the app shell ──────────────────────────────
+   [ADDED: convenience] Used on screens that need to fill the entire shell
+   height (auth, onboarding). */
+.screen-full {
+  min-height: calc(100dvh - var(--sat) - var(--sab));
+  display: flex;
+  flex-direction: column;
+}
