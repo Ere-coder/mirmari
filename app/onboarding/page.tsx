@@ -58,7 +58,11 @@ export default function OnboardingPage() {
 
   // ── Guard: redirect if profile already exists ──────────────────────────
   // This runs only in the browser (useEffect is never called during SSR).
-  // Middleware already enforces session auth; this page enforces profile state.
+  // Middleware already enforces that unauthenticated users cannot reach this
+  // page — if the session is missing, middleware redirects to / before the
+  // page renders. We do NOT call router.replace('/') on a null user here
+  // because a transient getUser() network error would silently discard a
+  // valid session and boot the user back to the opening screen.
   useEffect(() => {
     // Safe to instantiate the Supabase client here — browser only
     supabaseRef.current = createClient();
@@ -69,8 +73,11 @@ export default function OnboardingPage() {
         data: { user },
       } = await supabase.auth.getUser();
 
+      // No user: middleware already handles unauthenticated access, so trust
+      // the server-side check rather than doing a client-side redirect that
+      // could fire on a transient network error.
       if (!user) {
-        router.replace('/');
+        setCheckingProfile(false);
         return;
       }
 
@@ -115,7 +122,8 @@ export default function OnboardingPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      router.replace('/');
+      setError('Session expired. Please sign in again.');
+      setLoading(false);
       return;
     }
 
