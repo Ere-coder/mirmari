@@ -246,23 +246,14 @@ export default async function ItemPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-brand-bg pb-8">
+
       {/* Back navigation */}
-      <div
-        className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-app z-30 flex items-center px-4"
-        style={{ paddingTop: 'calc(0.75rem + var(--sat, 0px))' }}
-      >
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-app z-30 flex items-center px-4" style={{ paddingTop: 'calc(0.75rem + var(--sat, 0px))' }}>
         <Link
           href="/home"
-          className="
-            flex items-center gap-1.5
-            px-3 py-2 rounded-full
-            bg-brand-dark/60 backdrop-blur-sm
-            text-brand-bg text-[13px] font-medium
-            active:opacity-70 transition-opacity
-          "
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-dark/60 backdrop-blur-sm text-brand-bg text-[13px] font-medium active:opacity-70 transition-opacity"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6" />
           </svg>
           Back
