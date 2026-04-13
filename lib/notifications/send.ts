@@ -104,7 +104,7 @@ async function getFCMAccessToken(): Promise<string | null> {
     cryptoKey,
     new TextEncoder().encode(signingInput)
   );
-  const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
+  const signature = btoa(String.fromCharCode(...Array.from(new Uint8Array(signatureBytes))))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 
   const jwt = `${signingInput}.${signature}`;
