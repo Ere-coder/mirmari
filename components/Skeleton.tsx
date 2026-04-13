@@ -1,3 +1,5 @@
+import type React from 'react';
+
 /**
  * Skeleton — reusable loading placeholder primitives.
  *
@@ -10,12 +12,15 @@
 /** Single rectangular skeleton block. */
 export function SkeletonBlock({
   className = '',
+  style,
 }: {
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
       className={`bg-brand-surface animate-pulse rounded-2xl ${className}`}
+      style={style}
       aria-hidden="true"
     />
   );
