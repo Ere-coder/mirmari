@@ -246,7 +246,7 @@ export default async function ItemPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-brand-bg pb-8">
-      {/* ── Back navigation ─────────────────────────────���───────────────────── */}
+      {/* Back navigation */}
       <div
         className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-app z-30 flex items-center px-4"
         style={{ paddingTop: 'calc(0.75rem + var(--sat, 0px))' }}
