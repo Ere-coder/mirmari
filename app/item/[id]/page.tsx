@@ -529,7 +529,7 @@ export default async function ItemPage({ params }: PageProps) {
                   </span>
                 </div>
                 );
-              ))}
+              })}
             </div>
           </div>
         )}
