@@ -378,7 +378,7 @@ export default async function ItemPage({ params }: PageProps) {
           </div>
         )}
 
-        {/* ── Case 2 + 3: Owner view ────────────────────────���───────────────── */}
+        {/* ── Case 2 + 3: Owner view ──────────────────────────────────────────── */}
         {isOwner && (
           <div className="flex flex-col gap-3">
             {/* Static ownership note */}
