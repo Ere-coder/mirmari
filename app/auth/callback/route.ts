@@ -26,6 +26,12 @@ export async function GET(request: Request) {
 
   const cookieStore = cookies();
 
+  // Collect every cookie Supabase wants to write so we can apply them
+  // directly to the redirect response. In Next.js 14 App Router Route
+  // Handlers, cookies().set() mutations are not reliably merged into a
+  // NextResponse.redirect() — so we capture them here and set them manually.
+  const pendingCookies: { name: string; value: string; options: Parameters<typeof cookieStore.set>[2] }[] = [];
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -35,15 +41,18 @@ export async function GET(request: Request) {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
+          // Write to cookieStore so subsequent reads in this handler work,
+          // AND queue them for explicit application to the redirect response.
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+            pendingCookies.push({ name, value, options });
+          });
         },
       },
     }
   );
 
-  // Exchange the OAuth code for a session — this sets the auth cookies
+  // Exchange the OAuth code for a session — this triggers setAll above
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
   if (exchangeError) {
@@ -66,11 +75,14 @@ export async function GET(request: Request) {
     .eq('id', user.id)
     .single();
 
-  if (!profile) {
-    // New user — send to onboarding
-    return NextResponse.redirect(`${origin}/onboarding`);
-  }
+  const redirectUrl = profile ? `${origin}/home` : `${origin}/onboarding`;
+  const response = NextResponse.redirect(redirectUrl);
 
-  // Returning user with complete profile — send straight to home
-  return NextResponse.redirect(`${origin}/home`);
+  // Explicitly apply the session cookies onto the redirect response so the
+  // browser receives them and the middleware sees the session on the next request.
+  pendingCookies.forEach(({ name, value, options }) => {
+    response.cookies.set(name, value, options ?? {});
+  });
+
+  return response;
 }
