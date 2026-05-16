@@ -1,192 +1,182 @@
 /**
- * Owner Profile Page — route: /profile/[id]
+ * Profile — route: /profile/[id]
  *
- * Spec §OWNER PROFILE PAGE:
- * - Shows the owner's district.
- * - Grid of their currently available items (with forward images).
- * - Tapping an item navigates to /item/[id].
- * - If viewing your own profile, shows a sign-out option.
- *
- * Server Component: all data fetched server-side.
+ * v2: shows the user's own profile info, subscription status, and sign-out.
+ * Phase 8: outfit history added here.
  */
 import { redirect, notFound } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import BottomNav from '@/components/BottomNav';
 import SignOutButton from '@/components/SignOutButton';
-import { CATEGORY_LABELS, type ItemCategory, type PrimarySize } from '@/lib/types';
+import type { SubscriptionStatus } from '@/lib/types-v2';
 
 export const dynamic = 'force-dynamic';
 
-interface PageProps {
-  params: { id: string };
-}
+const SUB_STATUS_LABELS: Record<SubscriptionStatus, string> = {
+  waitlisted: 'Waitlisted',
+  active:     'Active',
+  paused:     'Paused',
+  cancelled:  'Cancelled',
+};
 
-export default async function ProfileDetailPage({ params }: PageProps) {
+const SUB_STATUS_COLORS: Record<SubscriptionStatus, string> = {
+  waitlisted: 'bg-yellow-50 text-yellow-700',
+  active:     'bg-green-50 text-green-700',
+  paused:     'bg-brand-surface text-brand-dark/50',
+  cancelled:  'bg-brand-dark/5 text-brand-dark/40',
+};
+
+export default async function ProfileDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/');
 
-  // ── Fetch profile ──────────────────────────────────────────────────────────
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id, district, display_name')
-    .eq('id', params.id)
-    .single();
+  // Only allow viewing your own profile for now (Phase 8 can expand this)
+  if (params.id !== user.id) redirect(`/profile/${user.id}`);
+
+  const [
+    { data: profile, error: profileError },
+    { data: sub },
+  ] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, display_name, delivery_zone, district, size_preference, is_admin')
+      .eq('id', params.id)
+      .single(),
+    supabase
+      .from('subscriptions')
+      .select('status, started_at')
+      .eq('user_id', params.id)
+      .single(),
+  ]);
 
   if (profileError || !profile) notFound();
 
-  const isOwnProfile = profile.id === user.id;
-  // Phase 8 §USER DISPLAY NAMES: display_name is optional; falls back to district
-  const profileName  = (profile as unknown as { display_name?: string | null }).display_name ?? null;
+  const p = profile as {
+    id: string;
+    display_name: string | null;
+    delivery_zone: string | null;
+    district: string | null;
+    size_preference: string | null;
+    is_admin: boolean;
+  };
 
-  // ── Fetch owner's available items with forward images ──────────────────────
-  const { data: rawItems } = await supabase
-    .from('items')
-    .select(`
-      id,
-      category,
-      primary_size,
-      numeric_size,
-      credit_value,
-      item_images ( id, url, is_forward )
-    `)
-    .eq('owner_id', params.id)
-    .eq('status', 'available')
-    .order('created_at', { ascending: false });
-
-  const items = (rawItems ?? []).map(item => {
-    const images = (item.item_images ?? []) as { id: string; url: string; is_forward: boolean }[];
-    const forwardImage = images.find(img => img.is_forward) ?? images[0] ?? null;
-    return {
-      id:          item.id,
-      category:    item.category as ItemCategory,
-      primarySize: item.primary_size as PrimarySize,
-      creditValue: item.credit_value,
-      imageUrl:    forwardImage?.url ?? null,
-    };
-  });
+  const displayName  = p.display_name ?? user.email ?? 'You';
+  const deliveryZone = p.delivery_zone ?? p.district ?? '—';
+  const subStatus    = sub?.status as SubscriptionStatus | undefined;
 
   return (
     <>
-      <main className="min-h-screen pb-32">
-        {/* ── Header ────────────────────────────────────────────────────────── */}
-        <div className="px-5 pt-12 pb-6">
-          {/* Back button */}
-          <Link
-            href="/home"
-            className="
-              inline-flex items-center gap-1 mb-6
-              text-brand-dark/40 text-[13px]
-              active:text-brand-dark/70 transition-colors
-            "
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            Back
-          </Link>
-
-          {/* Avatar placeholder + display_name + district */}
-          {/* Phase 8 §USER DISPLAY NAMES: display_name shown when set, district always shown */}
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-brand-surface flex items-center justify-center flex-none">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                className="text-brand-dark/30">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7" />
-              </svg>
-            </div>
-            <div>
-              {profileName && (
-                <p className="text-[19px] font-semibold text-brand-dark leading-tight mb-0.5">
-                  {profileName}
-                </p>
-              )}
-              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-dark/35 mb-0.5">
-                {profileName ? 'Location' : 'District'}
-              </p>
-              <p className={`font-semibold text-brand-dark ${profileName ? 'text-[15px]' : 'text-[17px]'}`}>
-                {profile.district}
-              </p>
-            </div>
-          </div>
-
-          {/* Own profile sign out */}
-          {isOwnProfile && (
-            <div className="mt-5">
-              <SignOutButton />
-            </div>
-          )}
+      <main
+        className="fixed inset-0 left-1/2 -translate-x-1/2 w-full max-w-app bg-brand-bg flex flex-col"
+        style={{ height: '100dvh' }}
+      >
+        {/* ── Header ───────────────────────────────────────────────────────── */}
+        <div
+          className="flex-shrink-0 px-5 bg-brand-bg border-b border-brand-dark/[0.06]"
+          style={{ paddingTop: 'calc(1rem + var(--sat, 0px))', paddingBottom: '1rem' }}
+        >
+          <h1 className="text-[20px] font-bold text-brand-dark">Profile</h1>
+          <p className="text-[11px] text-brand-dark/35">{user.email}</p>
         </div>
 
-        {/* ── Items grid ────────────────────────────────────────────────────── */}
-        <div className="px-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-dark/40 mb-4">
-            {isOwnProfile ? 'Your items' : 'Available items'} · {items.length}
-          </p>
+        {/* ── Scrollable content ────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto">
+          <div
+            className="px-4 py-5 flex flex-col gap-4"
+            style={{ paddingBottom: 'calc(6rem + var(--sab, 0px))' }}
+          >
 
-          {items.length === 0 ? (
-            <div className="bg-brand-surface rounded-2xl px-5 py-10 text-center">
-              <p className="text-[14px] text-brand-dark/40">
-                {isOwnProfile ? 'You haven\'t listed any items yet.' : 'No items available.'}
-              </p>
-              {isOwnProfile && (
-                <Link
-                  href="/upload"
-                  className="inline-block mt-4 text-[13px] text-brand-accent font-medium"
-                >
-                  List your first item →
-                </Link>
+            {/* ── Avatar + name ─────────────────────────────────────────── */}
+            <div className="flex items-center gap-4 py-2">
+              <div className="w-14 h-14 rounded-full bg-brand-surface flex items-center justify-center shrink-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                  className="text-brand-dark/30">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[17px] font-semibold text-brand-dark leading-tight">{displayName}</p>
+                {p.is_admin && (
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-accent">
+                    Admin
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* ── Subscription card ─────────────────────────────────────── */}
+            <div className="rounded-2xl bg-white border border-brand-dark/[0.06] p-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-brand-dark/40 mb-0.5">
+                  Subscription
+                </p>
+                {sub?.started_at && (
+                  <p className="text-[12px] text-brand-dark/40 mt-0.5">
+                    Since {new Date(sub.started_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                )}
+                {!sub && (
+                  <p className="text-[14px] font-medium text-brand-dark/40">No subscription</p>
+                )}
+              </div>
+              {subStatus && (
+                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${SUB_STATUS_COLORS[subStatus]}`}>
+                  {SUB_STATUS_LABELS[subStatus]}
+                </span>
               )}
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {items.map(item => (
-                <Link
-                  key={item.id}
-                  href={`/item/${item.id}`}
-                  className="block bg-brand-surface rounded-2xl overflow-hidden active:opacity-75 transition-opacity"
-                >
-                  {/* Item image */}
-                  <div className="aspect-square">
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={CATEGORY_LABELS[item.category]}
-                        className="w-full h-full object-cover"
-                        draggable={false}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-brand-bg">
-                        <span className="text-brand-dark/20 text-xs">No photo</span>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Item info */}
-                  <div className="px-3 py-2.5">
-                    <p className="text-[13px] font-medium text-brand-dark leading-tight">
-                      {CATEGORY_LABELS[item.category]}
-                    </p>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-[11px] text-brand-dark/40">{item.primarySize}</span>
-                      <span className="text-[11px] font-semibold text-brand-accent">
-                        {item.creditValue}cr
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+            {/* ── Details ───────────────────────────────────────────────── */}
+            <div className="rounded-2xl bg-white border border-brand-dark/[0.06] p-4 flex flex-col gap-3">
+              <InfoRow label="Delivery zone" value={deliveryZone} />
+              <InfoRow label="Size preference" value={p.size_preference ?? '—'} />
             </div>
-          )}
+
+            {/* ── Admin link ────────────────────────────────────────────── */}
+            {p.is_admin && (
+              <a
+                href="/admin"
+                className="
+                  rounded-2xl bg-white border border-brand-dark/[0.06]
+                  p-4 flex items-center justify-between gap-3
+                  active:bg-brand-surface transition-colors
+                "
+              >
+                <div>
+                  <p className="text-[15px] font-semibold text-brand-dark">Admin dashboard</p>
+                  <p className="text-[12px] text-brand-dark/45 mt-0.5">Manage seasons, inventory and users</p>
+                </div>
+                <span className="text-brand-dark/30 text-lg">›</span>
+              </a>
+            )}
+
+            {/* ── Sign out ──────────────────────────────────────────────── */}
+            <div className="pt-2">
+              <SignOutButton />
+            </div>
+
+          </div>
         </div>
       </main>
 
       <BottomNav />
     </>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-[13px] text-brand-dark/45">{label}</p>
+      <p className="text-[13px] font-medium text-brand-dark">{value}</p>
+    </div>
   );
 }

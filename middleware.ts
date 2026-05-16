@@ -39,10 +39,10 @@ export async function middleware(request: NextRequest) {
   // v1 routes (/home, /upload, /item, /credits, /chat, /chats, /insurance, /report)
   // remain guarded during transition; removed in Phase 9 cleanup.
   const protectedRoutes = [
-    // v2 routes
-    '/wardrobe', '/schedule', '/messages', '/subscribe',
+    // v2 routes — /wardrobe is public (browse without login)
+    '/schedule', '/messages', '/subscribe',
     // shared / kept routes
-    '/onboarding', '/profile', '/admin',
+    '/onboarding', '/profile', '/admin', '/admin/returns',
     // v1 routes still active during transition
     '/home', '/upload', '/item', '/credits', '/chat', '/chats', '/insurance', '/report',
   ];

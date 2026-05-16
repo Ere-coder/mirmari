@@ -17,6 +17,25 @@ export type OutfitItemStatus   = 'active' | 'retired';
 export type ReservationStatus = 'confirmed' | 'cancelled';
 export type ReturnCondition   = 'good' | 'minor_issue' | 'damaged';
 
+export interface ReturnEvent {
+  id:             string;
+  reservation_id: string;
+  admin_id:       string;
+  condition:      ReturnCondition;
+  notes:          string | null;
+  returned_at:    string;
+  created_at:     string;
+}
+
+export interface Reservation {
+  id:            string;
+  user_id:       string;
+  outfit_set_id: string;
+  week_start:    string;  // YYYY-MM-DD (always a Monday)
+  status:        ReservationStatus;
+  created_at:    string;
+}
+
 export type SubscriptionStatus = 'waitlisted' | 'active' | 'paused' | 'cancelled';
 
 // ── Display labels ────────────────────────────────────────────────────────────

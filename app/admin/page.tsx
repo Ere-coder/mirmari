@@ -152,6 +152,11 @@ export default async function AdminPage() {
                 title:    'Users',
                 subtitle: 'Manage subscriptions and waitlist',
               },
+              {
+                href:     '/admin/returns',
+                title:    'Returns',
+                subtitle: 'Log item conditions after return',
+              },
             ].map(({ href, title, subtitle }) => (
               <Link
                 key={href}
