@@ -4,10 +4,9 @@
  * Responsibilities:
  * 1. Refresh the Supabase session cookie so it doesn't expire silently.
  * 2. Enforce route-level auth guards:
- *    - Unauthenticated users hitting /home or /onboarding are sent to /.
- *    - Authenticated users hitting / are sent to /home.
- *    - Authenticated users with a complete profile hitting /onboarding
- *      are sent to /home.
+ *    - Unauthenticated users hitting protected routes are sent to /.
+ *    - Authenticated users hitting / are sent to /wardrobe (v2 home).
+ *    - v1 routes remain guarded during transition; removed in Phase 9.
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
@@ -36,14 +35,23 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // All authenticated-only routes. Unauthenticated users are sent to the auth screen.
-  // Phase 6: added /chat and /chats for the messaging system.
-  // Phase 7: added /insurance, /report, /admin for damage + insurance flows.
-  const protectedRoutes = ['/home', '/onboarding', '/upload', '/profile', '/item', '/credits', '/chat', '/chats', '/insurance', '/report', '/admin'];
+  // v2 Phase 1: replaced /upload, /item, /credits, /chat, /chats with v2 routes.
+  // v1 routes (/home, /upload, /item, /credits, /chat, /chats, /insurance, /report)
+  // remain guarded during transition; removed in Phase 9 cleanup.
+  const protectedRoutes = [
+    // v2 routes
+    '/wardrobe', '/schedule', '/messages', '/subscribe',
+    // shared / kept routes
+    '/onboarding', '/profile', '/admin',
+    // v1 routes still active during transition
+    '/home', '/upload', '/item', '/credits', '/chat', '/chats', '/insurance', '/report',
+  ];
   if (!user && protectedRoutes.some(r => pathname.startsWith(r))) {
     return NextResponse.redirect(new URL('/', request.url));
   }
   if (user && pathname === '/') {
-    return NextResponse.redirect(new URL('/home', request.url));
+    // v2: authenticated users land on /wardrobe (was /home in v1)
+    return NextResponse.redirect(new URL('/wardrobe', request.url));
   }
 
   return supabaseResponse;

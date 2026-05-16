@@ -1,54 +1,48 @@
-/**
- * BottomNav — persistent bottom navigation bar.
- *
- * Phase 6: Updated from 3 tabs to 4 tabs (Browse, Upload, Chats, Profile).
- * Added unread message badge on the Chats tab via get_unread_count() RPC.
- * Badge re-fetches on pathname change so it stays current as the user navigates.
- *
- * Shown on /home, /upload, /chats, /chat/*, /profile/*.
- * Uses usePathname() to highlight the active tab.
- * Position: fixed, centered, max-width 480px to match the app shell.
- * Respects safe-area-inset-bottom (--sab CSS var) for the home indicator.
- *
- * Spec §NAVIGATION:
- *   Browse  → /home     (active: pathname === '/home')
- *   Upload  → /upload   (active: pathname === '/upload')
- *   Chats   → /chats    (active: pathname.startsWith('/chat'))
- *   Profile → /profile  (active: pathname.startsWith('/profile'))
- */
 'use client';
+
+/**
+ * BottomNav — v2 persistent bottom navigation bar.
+ *
+ * v2 tabs (Phase 1):
+ *   Wardrobe  → /wardrobe   (active: pathname.startsWith('/wardrobe'))
+ *   Schedule  → /schedule   (active: pathname.startsWith('/schedule'))
+ *   Messages  → /messages   (active: pathname.startsWith('/messages'))
+ *   Profile   → /profile    (active: pathname.startsWith('/profile'))
+ *
+ * Unread badge on Messages tab is wired in Phase 7 when the v2 messaging
+ * system is built. Removed from this component for now.
+ */
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
-// ── SVG icons ─────────────────────────────────────────────────────────────────
+// ── Icons ──────────────────────────────────────────────────────────────────────
 
-function BrowseIcon({ active }: { active: boolean }) {
+function WardrobeIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth={active ? 2.2 : 1.7} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      {/* Hook */}
+      <circle cx="12" cy="5" r="1.5" />
+      {/* Hanger body — fans out from hook to a wide base */}
+      <path d="M12 6.5C9.5 8 4 11.5 4 17h16c0-5.5-5.5-9-8-10.5z" />
     </svg>
   );
 }
 
-function UploadIcon({ active }: { active: boolean }) {
+function ScheduleIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth={active ? 2.2 : 1.7} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <line x1="12" y1="8" x2="12" y2="16" />
-      <line x1="8" y1="12" x2="16" y2="12" />
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="16" y1="2" x2="16" y2="6" />
     </svg>
   );
 }
 
-function ChatsIcon({ active }: { active: boolean }) {
+function MessagesIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth={active ? 2.2 : 1.7} strokeLinecap="round" strokeLinejoin="round">
@@ -68,36 +62,31 @@ function ProfileIcon({ active }: { active: boolean }) {
 }
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
-// isActive function lets tabs with sub-routes (e.g. /chat/[id]) highlight correctly.
 
 const TABS = [
   {
-    href:     '/home',
-    label:    'Browse',
-    Icon:     BrowseIcon,
-    isActive: (p: string) => p === '/home',
-    showBadge: false,
+    href:     '/wardrobe',
+    label:    'Wardrobe',
+    Icon:     WardrobeIcon,
+    isActive: (p: string) => p.startsWith('/wardrobe'),
   },
   {
-    href:     '/upload',
-    label:    'Upload',
-    Icon:     UploadIcon,
-    isActive: (p: string) => p === '/upload',
-    showBadge: false,
+    href:     '/schedule',
+    label:    'Schedule',
+    Icon:     ScheduleIcon,
+    isActive: (p: string) => p.startsWith('/schedule'),
   },
   {
-    href:     '/chats',
-    label:    'Chats',
-    Icon:     ChatsIcon,
-    isActive: (p: string) => p.startsWith('/chat'),
-    showBadge: true,   // unread badge rendered for this tab
+    href:     '/messages',
+    label:    'Messages',
+    Icon:     MessagesIcon,
+    isActive: (p: string) => p.startsWith('/messages'),
   },
   {
     href:     '/profile',
     label:    'Profile',
     Icon:     ProfileIcon,
     isActive: (p: string) => p.startsWith('/profile'),
-    showBadge: false,
   },
 ] as const;
 
@@ -105,19 +94,6 @@ const TABS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
-  // unread count returned by get_unread_count() RPC; null = not yet loaded.
-  const [unread, setUnread] = useState<number>(0);
-
-  // ── Fetch unread count on mount and whenever the route changes ────────────
-  // Runs in useEffect so the Supabase client is never called during SSR.
-  useEffect(() => {
-    async function fetchUnread() {
-      const supabase = createClient();
-      const { data } = await supabase.rpc('get_unread_count');
-      setUnread((data as number) ?? 0);
-    }
-    fetchUnread();
-  }, [pathname]);   // re-fetch when user navigates (e.g. reads a chat → count drops)
 
   return (
     <nav
@@ -129,17 +105,14 @@ export default function BottomNav() {
         flex items-stretch justify-around
         z-50
       "
-      // [ADDED: UI structure improvement] Soft upward shadow instead of a hard
-      // border-t line — lifts the nav off the content without a visual divider.
       style={{
         paddingBottom: 'calc(0.875rem + var(--sab, 0px))',
         boxShadow: '0 -1px 0 rgba(30,20,32,0.06), 0 -12px 32px rgba(30,20,32,0.05)',
       }}
       aria-label="Main navigation"
     >
-      {TABS.map(({ href, label, Icon, isActive, showBadge }) => {
+      {TABS.map(({ href, label, Icon, isActive }) => {
         const active = isActive(pathname);
-        const badgeCount = showBadge ? unread : 0;
 
         return (
           <Link
@@ -153,36 +126,11 @@ export default function BottomNav() {
             `}
             aria-current={active ? 'page' : undefined}
           >
-            {/*
-              [ADDED: UI structure improvement] Thin accent bar at the top of
-              the active tab — signals position without competing with the icon.
-            */}
             {active && (
               <span className="absolute top-0 left-1/2 -translate-x-1/2 w-7 h-[2.5px] rounded-full bg-brand-accent" />
             )}
 
-            {/* Icon wrapper — position:relative so the badge anchors to it */}
-            <span className="relative">
-              <Icon active={active} />
-
-              {/* Unread badge — shown only for the Chats tab when count > 0 */}
-              {badgeCount > 0 && (
-                <span
-                  className="
-                    absolute -top-1 -right-1.5
-                    min-w-[16px] h-4
-                    px-[3px]
-                    rounded-full
-                    bg-brand-accent
-                    text-white text-[10px] font-semibold leading-4
-                    flex items-center justify-center
-                  "
-                  aria-label={`${badgeCount} unread message${badgeCount === 1 ? '' : 's'}`}
-                >
-                  {badgeCount > 99 ? '99+' : badgeCount}
-                </span>
-              )}
-            </span>
+            <Icon active={active} />
 
             <span
               className={`

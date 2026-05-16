@@ -1,24 +1,18 @@
+'use client';
+
 /**
  * Onboarding Screen — route: /onboarding
  *
- * Spec §ONBOARDING:
- * - Runs once after first login (when no profile row exists).
- * - Collects phone number and Tbilisi district.
- * - Saves to `profiles` table in Supabase.
- * - Redirects to /home on completion.
+ * v2 Phase 1 changes:
+ *   - "District" renamed to "Delivery zone" (same options, new label).
+ *   - `size_preference` field added (XS–XL).
+ *   - Writes `delivery_zone` alongside `district` during transition
+ *     (district remains NOT NULL in DB until Phase 9 cleanup).
+ *   - Redirects to /wardrobe on completion (was /home in v1).
  *
- * Tbilisi districts (hardcoded per spec):
- *   Vake, Saburtalo, Didube, Gldani, Isani, Samgori,
- *   Chugureti, Nadzaladevi, Krtsanisi, Mtatsminda
- *
- * City is hardcoded as "Tbilisi" per spec.
- *
- * NOTE on Supabase client instantiation:
- * createClient() must only be called inside useEffect or event handlers —
- * never at the component top level. Client Components still run on the server
- * during SSR pre-render, and createBrowserClient throws if env vars are absent.
+ * Runs once after first login (no profile row exists yet).
+ * Middleware enforces auth; if no session, user never reaches this route.
  */
-'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,8 +20,7 @@ import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Tbilisi districts — spec §ONBOARDING (hardcoded, no API)
-const TBILISI_DISTRICTS = [
+const DELIVERY_ZONES = [
   'Vake',
   'Saburtalo',
   'Didube',
@@ -40,46 +33,31 @@ const TBILISI_DISTRICTS = [
   'Mtatsminda',
 ] as const;
 
-type District = (typeof TBILISI_DISTRICTS)[number];
+const SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const;
+
+type DeliveryZone = (typeof DELIVERY_ZONES)[number];
+type Size = (typeof SIZES)[number];
 
 export default function OnboardingPage() {
   const router = useRouter();
-
-  // Supabase client is stored in a ref so it's created once on the client,
-  // never during SSR. useRef value persists across re-renders without triggering them.
   const supabaseRef = useRef<SupabaseClient | null>(null);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [district, setDistrict] = useState<District | ''>('');
+  const [zone, setZone] = useState<DeliveryZone | ''>('');
+  const [size, setSize] = useState<Size | ''>('');
   const [loading, setLoading] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ── Guard: redirect if profile already exists ──────────────────────────
-  // This runs only in the browser (useEffect is never called during SSR).
-  // Middleware already enforces that unauthenticated users cannot reach this
-  // page — if the session is missing, middleware redirects to / before the
-  // page renders. We do NOT call router.replace('/') on a null user here
-  // because a transient getUser() network error would silently discard a
-  // valid session and boot the user back to the opening screen.
+  // Guard: redirect if profile already exists
   useEffect(() => {
-    // Safe to instantiate the Supabase client here — browser only
     supabaseRef.current = createClient();
     const supabase = supabaseRef.current;
 
     async function checkProfile() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      // No user: middleware already handles unauthenticated access, so trust
-      // the server-side check rather than doing a client-side redirect that
-      // could fire on a transient network error.
-      if (!user) {
-        setCheckingProfile(false);
-        return;
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setCheckingProfile(false); return; }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -87,11 +65,7 @@ export default function OnboardingPage() {
         .eq('id', user.id)
         .single();
 
-      if (profile) {
-        // Profile already complete — skip onboarding
-        router.replace('/home');
-        return;
-      }
+      if (profile) { router.replace('/wardrobe'); return; }
 
       setCheckingProfile(false);
     }
@@ -99,57 +73,44 @@ export default function OnboardingPage() {
     checkProfile();
   }, [router]);
 
-  // ── Form submission: save profile to Supabase ──────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!phone.trim()) {
-      setError('Please enter your phone number.');
-      return;
-    }
-    if (!district) {
-      setError('Please select your district.');
-      return;
-    }
+    if (!phone.trim()) { setError('Please enter your phone number.'); return; }
+    if (!zone) { setError('Please select your delivery zone.'); return; }
+    if (!size) { setError('Please select your size.'); return; }
 
-    // supabaseRef.current is always set by this point (set in useEffect on mount)
     const supabase = supabaseRef.current!;
     setLoading(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setError('Session expired. Please sign in again.');
       setLoading(false);
       return;
     }
 
-    // Insert profile row — spec §DATABASE
-    // city is hardcoded to "Tbilisi" per spec
-    // display_name is optional — stored as null if blank (Phase 8: formalised column)
     const { error: insertError } = await supabase.from('profiles').insert({
-      id:           user.id,          // references auth.users
-      display_name: name.trim() || null,
-      phone:        phone.trim(),
-      city:         'Tbilisi',        // hardcoded per spec
-      district,
+      id:              user.id,
+      display_name:    name.trim() || null,
+      phone:           phone.trim(),
+      city:            'Tbilisi',
+      district:        zone,           // v1 column kept NOT NULL until Phase 9
+      delivery_zone:   zone,           // v2 column (schema-v2-phase1.sql)
+      size_preference: size,           // v2 column (schema-v2-phase1.sql)
     });
 
     if (insertError) {
-      console.error('[Onboarding] profiles insert error:', insertError);
+      console.error('[Onboarding] insert error:', insertError);
       setError(insertError.message || JSON.stringify(insertError));
       setLoading(false);
       return;
     }
 
-    // Onboarding complete — go to home
-    router.push('/home');
+    router.push('/subscribe');
   }
 
-  // Show spinner while checking (avoids flash of onboarding form for returning users)
   if (checkingProfile) {
     return (
       <div className="screen-full items-center justify-center">
@@ -160,7 +121,6 @@ export default function OnboardingPage() {
 
   return (
     <main className="screen-full px-6 py-10">
-      {/* ── Header ─────────────────────────────────────────────────────── */}
       <motion.div
         className="mb-10"
         initial={{ opacity: 0, y: 12 }}
@@ -171,11 +131,10 @@ export default function OnboardingPage() {
           Welcome to MirMari
         </h1>
         <p className="text-sm text-brand-dark/60">
-          A few details to get you started.
+          A few details to set up your wardrobe.
         </p>
       </motion.div>
 
-      {/* ── Form ───────────────────────────────────────────────────────── */}
       <motion.form
         onSubmit={handleSubmit}
         className="flex flex-col gap-5"
@@ -183,12 +142,9 @@ export default function OnboardingPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        {/* Display name input — Phase 8 §USER DISPLAY NAMES: optional, falls back to district */}
+        {/* Name — optional */}
         <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="name"
-            className="text-sm font-medium text-brand-dark"
-          >
+          <label htmlFor="name" className="text-sm font-medium text-brand-dark">
             Your name{' '}
             <span className="font-normal text-brand-dark/40">(optional)</span>
           </label>
@@ -196,7 +152,7 @@ export default function OnboardingPage() {
             id="name"
             type="text"
             autoComplete="name"
-            placeholder="Your name (optional)"
+            placeholder="Your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="
@@ -209,12 +165,9 @@ export default function OnboardingPage() {
           />
         </div>
 
-        {/* Phone number input */}
+        {/* Phone */}
         <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="phone"
-            className="text-sm font-medium text-brand-dark"
-          >
+          <label htmlFor="phone" className="text-sm font-medium text-brand-dark">
             Phone number
           </label>
           <input
@@ -235,51 +188,60 @@ export default function OnboardingPage() {
           />
         </div>
 
-        {/* District selector — spec §ONBOARDING */}
+        {/* Size preference */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-brand-dark">
+            Your size
+          </label>
+          <div className="flex gap-2">
+            {SIZES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSize(s)}
+                className={`
+                  flex-1 py-3 rounded-xl border text-sm font-medium
+                  transition-all duration-150
+                  ${size === s
+                    ? 'bg-brand-accent text-brand-bg border-brand-accent'
+                    : 'bg-white text-brand-dark border-brand-dark/15 active:bg-brand-surface'
+                  }
+                `}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Delivery zone */}
         <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="district"
-            className="text-sm font-medium text-brand-dark"
-          >
-            District
+          <label htmlFor="zone" className="text-sm font-medium text-brand-dark">
+            Delivery zone
           </label>
           <select
-            id="district"
-            value={district}
-            onChange={(e) => setDistrict(e.target.value as District)}
+            id="zone"
+            value={zone}
+            onChange={(e) => setZone(e.target.value as DeliveryZone)}
             className="
               w-full rounded-xl border border-brand-dark/15
               bg-white px-4 py-3
               text-brand-dark
               focus:outline-none focus:ring-2 focus:ring-brand-accent/40
-              transition-shadow
-              appearance-none
+              transition-shadow appearance-none
             "
           >
-            <option value="" disabled>
-              Select your district
-            </option>
-            {TBILISI_DISTRICTS.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
+            <option value="" disabled>Select your district</option>
+            {DELIVERY_ZONES.map((z) => (
+              <option key={z} value={z}>{z}</option>
             ))}
           </select>
         </div>
 
-        {/* City is hardcoded — shown as informational, not editable */}
-        <div className="rounded-xl bg-brand-surface px-4 py-3 text-sm text-brand-dark/70">
-          City: <span className="font-medium text-brand-dark">Tbilisi</span>
-        </div>
-
-        {/* Error message */}
         {error && (
-          <p className="text-sm text-red-500" role="alert">
-            {error}
-          </p>
+          <p className="text-sm text-red-500" role="alert">{error}</p>
         )}
 
-        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
@@ -288,9 +250,7 @@ export default function OnboardingPage() {
             rounded-2xl px-6 py-4
             text-base font-medium
             transition-opacity duration-200
-            disabled:opacity-60
-            active:opacity-80
-            mt-2
+            disabled:opacity-60 active:opacity-80 mt-2
           "
         >
           {loading ? (
