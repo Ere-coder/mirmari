@@ -6,7 +6,6 @@
  * 2. Enforce route-level auth guards:
  *    - Unauthenticated users hitting protected routes are sent to /.
  *    - Authenticated users hitting / are sent to /wardrobe (v2 home).
- *    - v1 routes remain guarded during transition; removed in Phase 9.
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
@@ -35,16 +34,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // All authenticated-only routes. Unauthenticated users are sent to the auth screen.
-  // v2 Phase 1: replaced /upload, /item, /credits, /chat, /chats with v2 routes.
-  // v1 routes (/home, /upload, /item, /credits, /chat, /chats, /insurance, /report)
-  // remain guarded during transition; removed in Phase 9 cleanup.
+  // /wardrobe is intentionally public (browse without login).
   const protectedRoutes = [
-    // v2 routes — /wardrobe is public (browse without login)
     '/schedule', '/messages', '/subscribe',
-    // shared / kept routes
-    '/onboarding', '/profile', '/admin', '/admin/returns',
-    // v1 routes still active during transition
-    '/home', '/upload', '/item', '/credits', '/chat', '/chats', '/insurance', '/report',
+    '/onboarding', '/profile', '/admin',
   ];
   if (!user && protectedRoutes.some(r => pathname.startsWith(r))) {
     return NextResponse.redirect(new URL('/', request.url));

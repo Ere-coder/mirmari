@@ -3,13 +3,6 @@
 /**
  * Onboarding Screen — route: /onboarding
  *
- * v2 Phase 1 changes:
- *   - "District" renamed to "Delivery zone" (same options, new label).
- *   - `size_preference` field added (XS–XL).
- *   - Writes `delivery_zone` alongside `district` during transition
- *     (district remains NOT NULL in DB until Phase 9 cleanup).
- *   - Redirects to /wardrobe on completion (was /home in v1).
- *
  * Runs once after first login (no profile row exists yet).
  * Middleware enforces auth; if no session, user never reaches this route.
  */
@@ -95,10 +88,8 @@ export default function OnboardingPage() {
       id:              user.id,
       display_name:    name.trim() || null,
       phone:           phone.trim(),
-      city:            'Tbilisi',
-      district:        zone,           // v1 column kept NOT NULL until Phase 9
-      delivery_zone:   zone,           // v2 column (schema-v2-phase1.sql)
-      size_preference: size,           // v2 column (schema-v2-phase1.sql)
+      delivery_zone:   zone,
+      size_preference: size,
     });
 
     if (insertError) {

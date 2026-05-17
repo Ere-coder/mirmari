@@ -157,6 +157,16 @@ export default async function AdminPage() {
                 title:    'Returns',
                 subtitle: 'Log item conditions after return',
               },
+              {
+                href:     '/admin/messages',
+                title:    'Messages',
+                subtitle: 'Reply to user conversations',
+              },
+              {
+                href:     '/admin/experiences',
+                title:    'Experiences',
+                subtitle: 'Upload outfit photos for users',
+              },
             ].map(({ href, title, subtitle }) => (
               <Link
                 key={href}

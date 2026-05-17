@@ -140,6 +140,18 @@ export interface OutfitSetWithOutfits extends OutfitSet {
   outfits: OutfitWithItems[];
 }
 
+// ── Outfit Experiences ────────────────────────────────────────────────────────
+
+export interface OutfitExperience {
+  id:            string;
+  user_id:       string;
+  outfit_set_id: string | null;
+  admin_id:      string;
+  image_url:     string;
+  caption:       string | null;
+  created_at:    string;
+}
+
 // ── Server action result types ─────────────────────────────────────────────────
 
 export type ActionResult =
@@ -153,6 +165,34 @@ export type CreateSeasonResult =
 export type CreateOutfitItemResult =
   | { success: true; itemId: string }
   | { success: false; error: string };
+
+// ── Messaging ─────────────────────────────────────────────────────────────────
+
+export type ChatSubject = 'delivery' | 'sizing' | 'support' | 'general';
+
+export const CHAT_SUBJECT_LABELS: Record<ChatSubject, string> = {
+  delivery: 'Delivery',
+  sizing:   'Sizing',
+  support:  'Support',
+  general:  'General',
+};
+
+export interface Chat {
+  id:         string;
+  user_id:    string;
+  subject:    ChatSubject;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Message {
+  id:         string;
+  chat_id:    string;
+  sender_id:  string;
+  content:    string;
+  is_system:  boolean;
+  created_at: string;
+}
 
 // ── Rotation Engine ────────────────────────────────────────────────────────────
 
