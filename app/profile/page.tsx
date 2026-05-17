@@ -42,7 +42,7 @@ export default async function ProfilePage() {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
   const thisMonday = getThisMonday();
 
@@ -84,7 +84,7 @@ export default async function ProfilePage() {
       .order('created_at', { ascending: false }),
   ]);
 
-  if (!profile) redirect('/onboarding');
+  // If profile row is missing, still show the page — sign out is always available.
 
   const p = profile as {
     id: string;
@@ -92,7 +92,7 @@ export default async function ProfilePage() {
     district: string | null;
     size_preference: string | null;
     is_admin: boolean;
-  };
+  } | null;
 
   type HistoryRow = {
     id: string; week_start: string;
@@ -108,7 +108,7 @@ export default async function ProfilePage() {
   const experiences = (experiencesData ?? []) as unknown as ExpRow[];
 
   const displayName  = user.email ?? 'You';
-  const deliveryZone = p.delivery_zone ?? p.district ?? '—';
+  const deliveryZone = p?.delivery_zone ?? p?.district ?? '—';
   const subStatus    = sub?.status as SubscriptionStatus | undefined;
 
   const CONDITION_LABELS: Record<string, string> = {
@@ -151,7 +151,7 @@ export default async function ProfilePage() {
               </div>
               <div>
                 <p className="text-[17px] font-semibold text-brand-dark leading-tight">{displayName}</p>
-                {p.is_admin && (
+                {p?.is_admin && (
                   <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-accent">
                     Admin
                   </span>
@@ -186,7 +186,7 @@ export default async function ProfilePage() {
             {/* Details */}
             <div className="rounded-2xl bg-white border border-brand-dark/[0.06] p-4 flex flex-col gap-3">
               <InfoRow label="Delivery zone" value={deliveryZone} />
-              <InfoRow label="Size preference" value={p.size_preference ?? '—'} />
+              <InfoRow label="Size preference" value={p?.size_preference ?? '—'} />
             </div>
 
             {/* My Looks */}
@@ -261,7 +261,7 @@ export default async function ProfilePage() {
             )}
 
             {/* Admin link */}
-            {p.is_admin && (
+            {p?.is_admin && (
               <a
                 href="/admin"
                 className="rounded-2xl bg-white border border-brand-dark/[0.06] p-4 flex items-center justify-between gap-3 active:bg-brand-surface transition-colors"
