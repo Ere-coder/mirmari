@@ -5,6 +5,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
 import ExperienceUploadForm from './ExperienceUploadForm';
 import { deleteExperience } from './actions';
 
@@ -14,11 +15,9 @@ export default async function ExperiencesPage() {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
-  const { data: p } = await supabase
-    .from('profiles').select('is_admin').eq('id', user.id).single();
-  if (!p?.is_admin) redirect('/wardrobe');
+  if (!await isAdminUser(user.id)) redirect('/wardrobe');
 
   const [
     { data: subsData },

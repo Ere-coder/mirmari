@@ -8,7 +8,7 @@ import type { ActionResult, ChatSubject } from '@/lib/types-v2';
 export async function createChat(subject: ChatSubject, firstMessage: string): Promise<void> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
   const content = firstMessage.trim();
   if (!content) redirect('/messages/new?error=Message+required');

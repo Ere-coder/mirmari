@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { toggleSave } from './actions';
 
 interface Props {
-  userId:       string | null;
-  setId:        string;
+  userId:     string | null;
+  hasProfile: boolean;
+  setId:      string;
   initialSaved: boolean;
 }
 
-export default function SaveButton({ userId, setId, initialSaved }: Props) {
+export default function SaveButton({ userId, hasProfile, setId, initialSaved }: Props) {
   const router = useRouter();
   const [saved, setSaved]   = useState(initialSaved);
   const [isPending, startTransition] = useTransition();
@@ -19,16 +20,20 @@ export default function SaveButton({ userId, setId, initialSaved }: Props) {
     e.stopPropagation();
 
     if (!userId) {
-      router.push('/');
+      router.push('/login');
+      return;
+    }
+    if (!hasProfile) {
+      router.push('/onboarding');
       return;
     }
 
     const next = !saved;
-    setSaved(next); // optimistic
+    setSaved(next);
 
     startTransition(async () => {
       const result = await toggleSave(setId);
-      if (!result.success) setSaved(saved); // revert on error
+      if (!result.success) setSaved(saved);
     });
   }
 

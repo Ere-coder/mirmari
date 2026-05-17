@@ -22,7 +22,14 @@ const SUBJECT_COLORS: Record<ChatSubject, string> = {
 export default async function MessagesPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', user.id)
+    .single();
+  if (!profile) redirect('/onboarding');
 
   const { data: chatsData } = await supabase
     .from('support_chats')

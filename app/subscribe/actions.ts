@@ -13,7 +13,7 @@ export async function joinWaitlist(): Promise<void> {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
   // Idempotency: don't create a duplicate row
   const { data: existing } = await supabase

@@ -85,6 +85,7 @@ export default async function WardrobePage() {
   let subStatus: SubscriptionStatus | undefined;
   let waitlistPosition: number | null = null;
   let savedSetIds: string[] = [];
+  let hasProfile  = false;
   let currentWeekOutfit: CurrentWeekOutfitData | null = null;
 
   if (user) {
@@ -93,6 +94,7 @@ export default async function WardrobePage() {
     const [
       { data: sub },
       { data: saves },
+      { data: profileRow },
     ] = await Promise.all([
       supabase
         .from('subscriptions')
@@ -103,10 +105,16 @@ export default async function WardrobePage() {
         .from('outfit_set_saves')
         .select('outfit_set_id')
         .eq('user_id', user.id),
+      supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single(),
     ]);
 
     subStatus   = sub?.status as SubscriptionStatus | undefined;
     savedSetIds = (saves ?? []).map((s: { outfit_set_id: string }) => s.outfit_set_id);
+    hasProfile  = !!profileRow;
 
     if (subStatus === 'waitlisted' && sub?.started_at) {
       const { count } = await supabase
@@ -203,6 +211,7 @@ export default async function WardrobePage() {
                     key={set.id}
                     set={set}
                     userId={user?.id ?? null}
+                    hasProfile={hasProfile}
                     saved={savedSetIds.includes(set.id)}
                   />
                 ))}
@@ -338,7 +347,7 @@ function StatusBanner({
       <div className="px-4 pb-3">
         <div className="rounded-2xl bg-brand-surface px-4 py-3 flex items-center justify-between gap-3">
           <p className="text-[13px] text-brand-dark/60">150 GEL/month · rotating outfits weekly</p>
-          <Link href="/" className="shrink-0 text-[12px] font-semibold text-brand-accent active:opacity-70">
+          <Link href="/login" className="shrink-0 text-[12px] font-semibold text-brand-accent active:opacity-70">
             Sign in
           </Link>
         </div>
@@ -389,11 +398,12 @@ function StatusBanner({
 // ── Outfit set card ───────────────────────────────────────────────────────────
 
 function OutfitSetCard({
-  set, userId, saved,
+  set, userId, hasProfile, saved,
 }: {
-  set:    SetCard;
-  userId: string | null;
-  saved:  boolean;
+  set:        SetCard;
+  userId:     string | null;
+  hasProfile: boolean;
+  saved:      boolean;
 }) {
   return (
     <div className="rounded-2xl overflow-hidden bg-brand-surface relative">
@@ -416,7 +426,7 @@ function OutfitSetCard({
         </span>
       </div>
       <div className="absolute top-2 right-2">
-        <SaveButton userId={userId} setId={set.id} initialSaved={saved} />
+        <SaveButton userId={userId} hasProfile={hasProfile} setId={set.id} initialSaved={saved} />
       </div>
     </div>
   );

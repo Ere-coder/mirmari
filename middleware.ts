@@ -40,11 +40,9 @@ export async function middleware(request: NextRequest) {
     '/onboarding', '/profile', '/admin',
   ];
   if (!user && protectedRoutes.some(r => pathname.startsWith(r))) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-  if (user && pathname === '/') {
-    // v2: authenticated users land on /wardrobe (was /home in v1)
-    return NextResponse.redirect(new URL('/wardrobe', request.url));
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return supabaseResponse;

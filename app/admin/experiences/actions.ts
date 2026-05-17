@@ -2,15 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
 import type { ActionResult } from '@/lib/types-v2';
 
 async function verifyAdmin() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { supabase: null, user: null };
-  const { data: p } = await supabase
-    .from('profiles').select('is_admin').eq('id', user.id).single();
-  if (!p?.is_admin) return { supabase: null, user: null };
+  if (!await isAdminUser(user.id)) return { supabase: null, user: null };
   return { supabase, user };
 }
 

@@ -7,6 +7,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
 import type { SubscriptionStatus } from '@/lib/types-v2';
 import UserList from './UserList';
 
@@ -35,15 +36,9 @@ export default async function UsersPage() {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_admin) redirect('/wardrobe');
+  if (!await isAdminUser(user.id)) redirect('/wardrobe');
 
   // Fetch all profiles with their subscription (left join via nested select)
   const { data: profilesData } = await supabase

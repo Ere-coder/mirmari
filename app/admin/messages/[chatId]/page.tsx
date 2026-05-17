@@ -5,6 +5,7 @@
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
 import MessageThread from '@/components/MessageThread';
 import { CHAT_SUBJECT_LABELS } from '@/lib/types-v2';
 import { sendAdminMessage } from '@/app/messages/actions';
@@ -19,11 +20,9 @@ export default async function AdminChatThreadPage({
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
-  const { data: p } = await supabase
-    .from('profiles').select('is_admin').eq('id', user.id).single();
-  if (!p?.is_admin) redirect('/wardrobe');
+  if (!await isAdminUser(user.id)) redirect('/wardrobe');
 
   const [{ data: chat }, { data: messagesData }] = await Promise.all([
     supabase

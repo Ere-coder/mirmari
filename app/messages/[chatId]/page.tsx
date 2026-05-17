@@ -20,7 +20,7 @@ export default async function ChatThreadPage({
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
   const [{ data: chat }, { data: messagesData }] = await Promise.all([
     supabase

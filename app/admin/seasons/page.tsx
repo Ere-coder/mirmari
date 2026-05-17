@@ -4,6 +4,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
 import { SEASON_STATUS_LABELS } from '@/lib/types-v2';
 import type { Season } from '@/lib/types-v2';
 
@@ -20,15 +21,9 @@ export default async function SeasonsPage() {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_admin) redirect('/wardrobe');
+  if (!await isAdminUser(user.id)) redirect('/wardrobe');
 
   const { data: seasons } = await supabase
     .from('seasons')

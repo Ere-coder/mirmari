@@ -5,6 +5,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
 import { CHAT_SUBJECT_LABELS } from '@/lib/types-v2';
 import type { ChatSubject } from '@/lib/types-v2';
 
@@ -20,11 +21,9 @@ const SUBJECT_COLORS: Record<ChatSubject, string> = {
 export default async function AdminMessagesPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
-  const { data: p } = await supabase
-    .from('profiles').select('is_admin').eq('id', user.id).single();
-  if (!p?.is_admin) redirect('/wardrobe');
+  if (!await isAdminUser(user.id)) redirect('/wardrobe');
 
   const { data: chatsData } = await supabase
     .from('support_chats')

@@ -3,17 +3,13 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
 
 async function verifyAdmin() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { supabase: null, user: null };
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-  if (!profile?.is_admin) return { supabase: null, user: null };
+  if (!await isAdminUser(user.id)) return { supabase: null, user: null };
   return { supabase, user };
 }
 

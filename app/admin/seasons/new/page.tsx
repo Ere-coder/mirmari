@@ -8,6 +8,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
 import { createSeason } from '@/app/admin/seasons/actions';
 
 export const dynamic = 'force-dynamic';
@@ -20,15 +21,9 @@ export default async function NewSeasonPage({
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_admin) redirect('/wardrobe');
+  if (!await isAdminUser(user.id)) redirect('/wardrobe');
 
   const errorMsg = searchParams.error
     ? decodeURIComponent(searchParams.error)

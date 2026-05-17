@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getProfile } from '@/lib/server/admin';
 import BottomNav from '@/components/BottomNav';
 import SignOutButton from '@/components/SignOutButton';
 import type { SubscriptionStatus } from '@/lib/types-v2';
@@ -47,16 +48,12 @@ export default async function ProfilePage() {
   const thisMonday = getThisMonday();
 
   const [
-    { data: profile },
+    profile,
     { data: sub },
     { data: historyData },
     { data: experiencesData },
   ] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, delivery_zone, district, size_preference, is_admin')
-      .eq('id', user.id)
-      .single(),
+    getProfile(user.id),
 
     supabase
       .from('subscriptions')
@@ -84,15 +81,7 @@ export default async function ProfilePage() {
       .order('created_at', { ascending: false }),
   ]);
 
-  // If profile row is missing, still show the page — sign out is always available.
-
-  const p = profile as {
-    id: string;
-    delivery_zone: string | null;
-    district: string | null;
-    size_preference: string | null;
-    is_admin: boolean;
-  } | null;
+  const p = profile;
 
   type HistoryRow = {
     id: string; week_start: string;
