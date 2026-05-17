@@ -36,21 +36,20 @@ export async function createExperience(
   if (error) return { success: false, error: error.message };
 
   revalidatePath('/admin/experiences');
-  revalidatePath(`/profile/${userId}`);
+  revalidatePath('/profile');
   return { success: true };
 }
 
-export async function deleteExperience(experienceId: string): Promise<ActionResult> {
+export async function deleteExperience(experienceId: string, _formData?: FormData): Promise<void> {
   const { supabase } = await verifyAdmin();
-  if (!supabase) return { success: false, error: 'Unauthorized' };
+  if (!supabase) return;
 
   const { error } = await supabase
     .from('outfit_experiences')
     .delete()
     .eq('id', experienceId);
 
-  if (error) return { success: false, error: error.message };
+  if (error) { console.error('[deleteExperience]', error.message); return; }
 
   revalidatePath('/admin/experiences');
-  return { success: true };
 }
