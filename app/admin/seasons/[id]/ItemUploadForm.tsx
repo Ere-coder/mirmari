@@ -29,12 +29,13 @@ export default function ItemUploadForm({ seasonId, existingItems }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   // Form fields
-  const [name, setName]         = useState('');
-  const [category, setCategory] = useState<OutfitItemCategory | ''>('');
-  const [size, setSize]         = useState('');
-  const [color, setColor]       = useState('');
-  const [brand, setBrand]       = useState('');
-  const [desc, setDesc]         = useState('');
+  const [name, setName]           = useState('');
+  const [category, setCategory]   = useState<OutfitItemCategory | ''>('');
+  const [size, setSize]           = useState('');
+  const [alsoFits, setAlsoFits]   = useState<string[]>([]);
+  const [color, setColor]         = useState('');
+  const [brand, setBrand]         = useState('');
+  const [desc, setDesc]           = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -48,10 +49,14 @@ export default function ItemUploadForm({ seasonId, existingItems }: Props) {
   }
 
   function resetForm() {
-    setName(''); setCategory(''); setSize(''); setColor('');
+    setName(''); setCategory(''); setSize(''); setAlsoFits([]); setColor('');
     setBrand(''); setDesc(''); setImageFile(null); setPreviewUrl(null);
     if (fileRef.current) fileRef.current.value = '';
     setError(null);
+  }
+
+  function toggleAlsoFits(s: string) {
+    setAlsoFits(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -86,7 +91,7 @@ export default function ItemUploadForm({ seasonId, existingItems }: Props) {
     // ── Create item row ───────────────────────────────────────────────────
     const result = await createOutfitItem(
       seasonId,
-      { name, category: category as string, size, color, brand, description: desc },
+      { name, category: category as string, size, alsoFits, color, brand, description: desc },
       publicUrl
     );
 
@@ -217,23 +222,53 @@ export default function ItemUploadForm({ seasonId, existingItems }: Props) {
           </select>
 
           {/* Size */}
-          <div className="flex gap-2">
-            {SIZES.map(s => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setSize(s)}
-                className={`
-                  flex-1 py-2.5 rounded-xl border text-[12px] font-medium transition-all
-                  ${size === s
-                    ? 'bg-brand-accent text-brand-bg border-brand-accent'
-                    : 'bg-white text-brand-dark border-brand-dark/15'}
-                `}
-              >
-                {s}
-              </button>
-            ))}
+          <div className="flex flex-col gap-2">
+            <p className="text-[12px] font-medium text-brand-dark">Size purchased</p>
+            <div className="flex gap-2">
+              {SIZES.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSize(s)}
+                  className={`
+                    flex-1 py-2.5 rounded-xl border text-[12px] font-medium transition-all
+                    ${size === s
+                      ? 'bg-brand-accent text-brand-bg border-brand-accent'
+                      : 'bg-white text-brand-dark border-brand-dark/15'}
+                  `}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Also fits */}
+          {size && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[12px] font-medium text-brand-dark">
+                Also fits
+                <span className="font-normal text-brand-dark/40 ml-1">— optional, for flexible pieces</span>
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {SIZES.filter(s => s !== size).map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => toggleAlsoFits(s)}
+                    className={`
+                      px-3 py-2 rounded-xl border text-[12px] font-medium transition-all
+                      ${alsoFits.includes(s)
+                        ? 'bg-brand-dark text-brand-bg border-brand-dark'
+                        : 'bg-white text-brand-dark border-brand-dark/15'}
+                    `}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Color */}
           <input

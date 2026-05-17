@@ -69,11 +69,11 @@ export default async function NewSeasonPage({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Start date">
-              <input name="starts_at" type="date" required className={inputCls} />
+            <Field label="Start date" hint="optional">
+              <input name="starts_at" type="date" className={inputCls} />
             </Field>
-            <Field label="End date">
-              <input name="ends_at" type="date" required className={inputCls} />
+            <Field label="End date" hint="optional">
+              <input name="ends_at" type="date" className={inputCls} />
             </Field>
           </div>
 
@@ -90,14 +90,6 @@ export default async function NewSeasonPage({
               required
               className={inputCls}
             />
-          </Field>
-
-          <Field label="Expected demand">
-            <select name="demand_level" required className={inputCls}>
-              <option value="low">Low</option>
-              <option value="medium" selected>Medium</option>
-              <option value="high">High</option>
-            </select>
           </Field>
 
           <button

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { isAdminUser } from '@/lib/server/admin';
+import { createServiceClient } from '@/lib/supabase/service';
 import type {
   ActionResult,
   CreateOutfitItemResult,
@@ -12,14 +14,9 @@ import type {
 async function verifyAdmin() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { supabase: null, user: null };
-  const { data: p } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-  if (!p?.is_admin) return { supabase: null, user: null };
-  return { supabase, user };
+  if (!user) return { user: null };
+  if (!await isAdminUser(user.id)) return { user: null };
+  return { user };
 }
 
 // ── Outfit Items ──────────────────────────────────────────────────────────────
@@ -30,33 +27,36 @@ export async function createOutfitItem(
     name: string;
     category: string;
     size: string;
+    alsoFits: string[];
     color: string;
     brand: string;
     description: string;
   },
   imageUrl: string
 ): Promise<CreateOutfitItemResult> {
-  const { supabase, user } = await verifyAdmin();
-  if (!supabase || !user) return { success: false, error: 'Unauthorized' };
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
 
-  const { data: item, error } = await supabase
+  const db = createServiceClient();
+  const { data: item, error } = await db
     .from('outfit_items')
     .insert({
-      admin_id:    user.id,
-      season_id:   seasonId,
-      name:        data.name.trim(),
-      description: data.description.trim() || null,
-      category:    data.category,
-      size:        data.size,
-      color:       data.color.trim(),
-      brand:       data.brand.trim() || null,
+      admin_id:         user.id,
+      season_id:        seasonId,
+      name:             data.name.trim(),
+      description:      data.description.trim() || null,
+      category:         data.category,
+      size:             data.size,
+      also_fits_sizes:  data.alsoFits,
+      color:            data.color.trim(),
+      brand:            data.brand.trim() || null,
     })
     .select('id')
     .single();
 
   if (error || !item) return { success: false, error: error?.message ?? 'Insert failed' };
 
-  const { error: imgError } = await supabase
+  const { error: imgError } = await db
     .from('outfit_item_images')
     .insert({ item_id: item.id, url: imageUrl, is_primary: true });
 
@@ -72,10 +72,11 @@ export async function createOutfitSet(
   seasonId: string,
   code: string
 ): Promise<ActionResult> {
-  const { supabase } = await verifyAdmin();
-  if (!supabase) return { success: false, error: 'Unauthorized' };
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
 
-  const { error } = await supabase.rpc('create_outfit_set', {
+  const db = createServiceClient();
+  const { error } = await db.rpc('create_outfit_set', {
     p_season_id: seasonId,
     p_code: code,
   });
@@ -93,10 +94,11 @@ export async function assignItemToOutfit(
   itemId: string,
   seasonId: string
 ): Promise<ActionResult> {
-  const { supabase } = await verifyAdmin();
-  if (!supabase) return { success: false, error: 'Unauthorized' };
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
 
-  const { error } = await supabase
+  const db = createServiceClient();
+  const { error } = await db
     .from('outfit_composition')
     .insert({ outfit_id: outfitId, item_id: itemId });
 
@@ -114,10 +116,11 @@ export async function removeItemFromOutfit(
   itemId: string,
   seasonId: string
 ): Promise<ActionResult> {
-  const { supabase } = await verifyAdmin();
-  if (!supabase) return { success: false, error: 'Unauthorized' };
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
 
-  const { error } = await supabase
+  const db = createServiceClient();
+  const { error } = await db
     .from('outfit_composition')
     .delete()
     .eq('outfit_id', outfitId)
@@ -134,10 +137,11 @@ export async function removeItemFromOutfit(
 export async function generateRotation(
   seasonId: string
 ): Promise<GenerateRotationResult> {
-  const { supabase } = await verifyAdmin();
-  if (!supabase) return { success: false, error: 'Unauthorized' };
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
 
-  const { data, error } = await supabase.rpc('generate_rotation_cycle', {
+  const db = createServiceClient();
+  const { data, error } = await db.rpc('generate_rotation_cycle', {
     p_season_id: seasonId,
   });
 
@@ -160,10 +164,11 @@ export async function updateSeasonStatus(
   seasonId: string,
   newStatus: SeasonStatus
 ): Promise<ActionResult> {
-  const { supabase } = await verifyAdmin();
-  if (!supabase) return { success: false, error: 'Unauthorized' };
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
 
-  const { error } = await supabase.rpc('update_season_status', {
+  const db = createServiceClient();
+  const { error } = await db.rpc('update_season_status', {
     p_season_id: seasonId,
     p_status: newStatus,
   });
