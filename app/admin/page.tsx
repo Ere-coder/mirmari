@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { isAdminUser } from '@/lib/server/admin';
+import { createServiceClient } from '@/lib/supabase/service';
 import { SEASON_STATUS_LABELS } from '@/lib/types-v2';
 import type { Season } from '@/lib/types-v2';
 
@@ -28,6 +29,8 @@ export default async function AdminPage() {
 
   if (!await isAdminUser(user.id)) redirect('/wardrobe');
 
+  const db = createServiceClient();
+
   // ── Fetch overview data ────────────────────────────────────────────────────
   const [
     { data: seasons },
@@ -36,22 +39,22 @@ export default async function AdminPage() {
     { count: activeSubCount },
     { count: waitlistCount },
   ] = await Promise.all([
-    supabase
+    db
       .from('seasons')
       .select('id, name, status, starts_at, ends_at')
       .order('created_at', { ascending: false })
       .limit(5),
-    supabase
+    db
       .from('outfit_items')
       .select('id', { count: 'exact', head: true }),
-    supabase
+    db
       .from('outfit_sets')
       .select('id', { count: 'exact', head: true }),
-    supabase
+    db
       .from('subscriptions')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'active'),
-    supabase
+    db
       .from('subscriptions')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'waitlisted'),
