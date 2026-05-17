@@ -93,6 +93,11 @@ export default function OnboardingPage() {
     });
 
     if (insertError) {
+      if (insertError.code === '23505') {
+        // Profile already exists — proceed as if onboarding completed
+        router.push('/wardrobe');
+        return;
+      }
       console.error('[Onboarding] insert error:', insertError);
       setError(insertError.message || JSON.stringify(insertError));
       setLoading(false);
