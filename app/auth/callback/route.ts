@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { getProfile } from '@/lib/server/admin';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/wardrobe';
@@ -12,18 +11,22 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=oauth_failed`);
   }
 
-  const cookieStore = cookies();
+  // Build the redirect response up front so Supabase's session cookies can be
+  // written directly onto it. Cookies written via next/headers' cookies() do
+  // not reliably attach to NextResponse.redirect() in App Router route handlers.
+  const safeNext = next.startsWith('/') ? next : '/wardrobe';
+  let response = NextResponse.redirect(`${origin}${safeNext}`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return cookieStore.getAll(); },
+        getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
@@ -40,9 +43,10 @@ export async function GET(request: Request) {
   }
 
   const profile = await getProfile(user.id);
-  const safeNext = next.startsWith('/') ? next : '/wardrobe';
-
-  // New user (no profile yet) → wardrobe to browse, they'll be prompted for onboarding on first action
-  // Returning user → go to where they came from, or wardrobe
-  return NextResponse.redirect(profile ? `${origin}${safeNext}` : `${origin}/wardrobe`);
+  if (!profile) {
+    const wardrobeResponse = NextResponse.redirect(`${origin}/wardrobe`);
+    response.cookies.getAll().forEach((c) => wardrobeResponse.cookies.set(c));
+    return wardrobeResponse;
+  }
+  return response;
 }
