@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { getProfile } from '@/lib/server/admin';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -12,7 +13,6 @@ export async function GET(request: Request) {
   }
 
   const cookieStore = cookies();
-  const pendingCookies: { name: string; value: string; options: Parameters<typeof cookieStore.set>[2] }[] = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +23,6 @@ export async function GET(request: Request) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);
-            pendingCookies.push({ name, value, options });
           });
         },
       },
@@ -40,21 +39,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login`);
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .single();
+  const profile = await getProfile(user.id);
+  const safeNext = next.startsWith('/') ? next : '/wardrobe';
 
-  // New user (no profile) → wardrobe to browse; they'll hit onboarding when they try an action
+  // New user (no profile yet) → wardrobe to browse, they'll be prompted for onboarding on first action
   // Returning user → go to where they came from, or wardrobe
-  const safeNext   = next.startsWith('/') ? next : '/wardrobe';
-  const redirectUrl = profile ? `${origin}${safeNext}` : `${origin}/wardrobe`;
-  const response   = NextResponse.redirect(redirectUrl);
-
-  pendingCookies.forEach(({ name, value, options }) => {
-    response.cookies.set(name, value, options ?? {});
-  });
-
-  return response;
+  return NextResponse.redirect(profile ? `${origin}${safeNext}` : `${origin}/wardrobe`);
 }
