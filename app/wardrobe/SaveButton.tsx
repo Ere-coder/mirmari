@@ -6,12 +6,11 @@ import { toggleSave } from './actions';
 
 interface Props {
   userId:     string | null;
-  hasProfile: boolean;
   setId:      string;
   initialSaved: boolean;
 }
 
-export default function SaveButton({ userId, hasProfile, setId, initialSaved }: Props) {
+export default function SaveButton({ userId, setId, initialSaved }: Props) {
   const router = useRouter();
   const [saved, setSaved]   = useState(initialSaved);
   const [isPending, startTransition] = useTransition();
@@ -21,10 +20,6 @@ export default function SaveButton({ userId, hasProfile, setId, initialSaved }: 
 
     if (!userId) {
       router.push('/login');
-      return;
-    }
-    if (!hasProfile) {
-      router.push('/onboarding');
       return;
     }
 
