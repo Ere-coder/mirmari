@@ -6,6 +6,7 @@
  */
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getProfile } from '@/lib/server/admin';
 import JoinButton from './JoinButton';
 
 export const dynamic = 'force-dynamic';
@@ -23,11 +24,7 @@ export default async function SubscribePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .single();
+  const profile = await getProfile(user.id);
   if (!profile) redirect('/onboarding');
 
   // Already subscribed — skip ahead
