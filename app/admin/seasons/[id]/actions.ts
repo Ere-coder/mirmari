@@ -32,10 +32,11 @@ export async function createOutfitItem(
     brand: string;
     description: string;
   },
-  imageUrl: string
+  imageUrls: string[]
 ): Promise<CreateOutfitItemResult> {
   const { user } = await verifyAdmin();
   if (!user) return { success: false, error: 'Unauthorized' };
+  if (imageUrls.length === 0) return { success: false, error: 'At least one image required' };
 
   const db = createServiceClient();
   const { data: item, error } = await db
@@ -58,7 +59,13 @@ export async function createOutfitItem(
 
   const { error: imgError } = await db
     .from('outfit_item_images')
-    .insert({ item_id: item.id, url: imageUrl, is_primary: true });
+    .insert(
+      imageUrls.map((url, idx) => ({
+        item_id:    item.id,
+        url,
+        is_primary: idx === 0,
+      }))
+    );
 
   if (imgError) return { success: false, error: imgError.message };
 

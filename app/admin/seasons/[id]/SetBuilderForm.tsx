@@ -18,6 +18,7 @@ import type {
   OutfitItemWithImages,
   OutfitSetWithOutfits,
 } from '@/lib/types-v2';
+import ItemUploadForm from './ItemUploadForm';
 
 interface Props {
   seasonId: string;
@@ -29,6 +30,7 @@ export default function SetBuilderForm({ seasonId, seasonItems, sets }: Props) {
   const [expandedSetId, setExpandedSetId] = useState<string | null>(null);
   const [activeSlot, setActiveSlot] = useState<1 | 2 | 3>(1);
   const [showItemPicker, setShowItemPicker] = useState(false);
+  const [showUploadInSlot, setShowUploadInSlot] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newCode, setNewCode] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
@@ -198,24 +200,49 @@ export default function SetBuilderForm({ seasonId, seasonItems, sets }: Props) {
                     );
                   })}
 
+                  {/* Inline upload form — creates item + auto-assigns to this slot */}
+                  {showUploadInSlot && activeOutfit && (
+                    <ItemUploadForm
+                      seasonId={seasonId}
+                      embedded
+                      outfitId={activeOutfit.id}
+                      onDone={() => setShowUploadInSlot(false)}
+                    />
+                  )}
+
                   {/* Add items */}
-                  {!showItemPicker ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowItemPicker(true)}
-                      disabled={isPending || seasonItems.length === 0}
-                      className="
-                        w-full rounded-xl border border-dashed border-brand-dark/20
-                        py-2.5 text-[12px] font-medium text-brand-dark/50
-                        active:bg-brand-surface disabled:opacity-40 transition-colors
-                      "
-                    >
-                      {seasonItems.length === 0
-                        ? 'Add items to the season first'
-                        : '+ Add items to this outfit'
-                      }
-                    </button>
-                  ) : (
+                  {!showUploadInSlot && !showItemPicker && (
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowUploadInSlot(true)}
+                        disabled={isPending}
+                        className="
+                          w-full rounded-xl border border-dashed border-brand-dark/20
+                          py-2.5 text-[12px] font-medium text-brand-dark/50
+                          active:bg-brand-surface disabled:opacity-40 transition-colors
+                        "
+                      >
+                        + Upload new item
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowItemPicker(true)}
+                        disabled={isPending || seasonItems.length === 0}
+                        className="
+                          w-full rounded-xl border border-dashed border-brand-dark/20
+                          py-2.5 text-[12px] font-medium text-brand-dark/50
+                          active:bg-brand-surface disabled:opacity-40 transition-colors
+                        "
+                      >
+                        {seasonItems.length === 0
+                          ? 'No existing season items yet'
+                          : '+ Pick from season items'
+                        }
+                      </button>
+                    </div>
+                  )}
+                  {showItemPicker && (
                     <div className="rounded-xl border border-brand-dark/[0.08] overflow-hidden">
                       <div className="flex items-center justify-between px-3 py-2 bg-brand-surface border-b border-brand-dark/[0.06]">
                         <p className="text-[12px] font-semibold text-brand-dark">Season items</p>
