@@ -77,44 +77,42 @@ function SetRow({
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {sorted.map(outfit => (
-          <button
-            key={outfit.slot}
-            type="button"
-            onClick={() => outfit.images.length > 0 && onOpen(outfit.slot, outfit.images, 0)}
-            className="
-              w-full aspect-[5/4]
-              relative rounded-2xl overflow-hidden bg-brand-surface
-              active:opacity-80 transition-opacity
-            "
-          >
-            {outfit.images[0] ? (
-              <Image
-                src={outfit.images[0]}
-                alt={`Set ${set.code} ${SLOT_LABELS[outfit.slot]}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 480px) 100vw, 480px"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-brand-dark/20 text-[12px]">
+          <div key={outfit.slot} className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-dark/40 px-1">
+              {SLOT_LABELS[outfit.slot]}
+            </p>
+
+            {outfit.images.length === 0 ? (
+              <div className="w-full aspect-[3/4] max-h-[160px] rounded-xl bg-brand-surface flex items-center justify-center text-brand-dark/20 text-[12px]">
                 Empty
               </div>
-            )}
-            <div className="absolute top-2.5 left-2.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/55 text-white">
-                {SLOT_LABELS[outfit.slot]}
-              </span>
-            </div>
-            {outfit.images.length > 1 && (
-              <div className="absolute bottom-2.5 right-2.5">
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-black/55 text-white">
-                  +{outfit.images.length - 1}
-                </span>
+            ) : (
+              <div className="flex gap-2 overflow-x-auto -mx-4 px-4 scrollbar-none">
+                {outfit.images.map((url, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => onOpen(outfit.slot, outfit.images, idx)}
+                    className="
+                      shrink-0 w-[37%] aspect-[3/4]
+                      relative rounded-xl overflow-hidden bg-brand-surface
+                      active:opacity-80 transition-opacity
+                    "
+                  >
+                    <Image
+                      src={url}
+                      alt={`Set ${set.code} ${SLOT_LABELS[outfit.slot]} photo ${idx + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 480px) 37vw, 180px"
+                    />
+                  </button>
+                ))}
               </div>
             )}
-          </button>
+          </div>
         ))}
       </div>
     </section>
