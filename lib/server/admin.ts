@@ -14,13 +14,12 @@ export async function getProfile(userId: string) {
   const supabase = createServiceClient();
   const { data } = await supabase
     .from('profiles')
-    .select('id, delivery_zone, district, size_preference, is_admin')
+    .select('id, delivery_zone, size_preference, is_admin')
     .eq('id', userId)
     .single();
   return data as {
     id: string;
     delivery_zone: string | null;
-    district: string | null;
     size_preference: string | null;
     is_admin: boolean;
   } | null;
