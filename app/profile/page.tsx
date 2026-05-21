@@ -97,7 +97,7 @@ export default async function ProfilePage() {
   const experiences = (experiencesData ?? []) as unknown as ExpRow[];
 
   const displayName  = user.email ?? 'You';
-  const deliveryZone = p?.delivery_zone ?? p?.district ?? '—';
+  const deliveryZone = p?.delivery_zone ?? '—';
   const subStatus    = sub?.status as SubscriptionStatus | undefined;
 
   const CONDITION_LABELS: Record<string, string> = {
