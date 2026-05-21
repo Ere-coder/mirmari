@@ -3,8 +3,17 @@ const nextConfig = {
   // Strict mode for catching potential issues during development
   reactStrictMode: true,
 
-  // [ADDED: PWA headers] Custom headers to ensure the manifest and service worker
-  // are served with correct content types and caching behavior
+  // Allow next/image to load images from Supabase Storage public URLs.
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
+
   async headers() {
     return [
       {
