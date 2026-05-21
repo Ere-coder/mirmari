@@ -31,8 +31,8 @@ DROP TRIGGER IF EXISTS set_credit_value ON public.items;
 DROP FUNCTION IF EXISTS public.compute_credit_value() CASCADE;
 
 -- auto-create credits row on profile insert
-DROP TRIGGER IF EXISTS create_credits_on_profile ON public.profiles;
-DROP FUNCTION IF EXISTS public.handle_new_profile() CASCADE;
+DROP TRIGGER IF EXISTS profiles_create_credits ON public.profiles;
+DROP FUNCTION IF EXISTS public.create_user_credits() CASCADE;
 
 -- advance_queue and related RPCs (all SECURITY DEFINER)
 DROP FUNCTION IF EXISTS public.join_queue(UUID, UUID) CASCADE;

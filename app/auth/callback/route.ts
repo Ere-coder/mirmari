@@ -43,10 +43,8 @@ export async function GET(request: NextRequest) {
   }
 
   const profile = await getProfile(user.id);
-  if (!profile) {
-    const wardrobeResponse = NextResponse.redirect(`${origin}/wardrobe`);
-    response.cookies.getAll().forEach((c) => wardrobeResponse.cookies.set(c));
-    return wardrobeResponse;
-  }
-  return response;
+  const destination = profile ? safeNext : '/onboarding';
+  const finalResponse = NextResponse.redirect(`${origin}${destination}`);
+  response.cookies.getAll().forEach((c) => finalResponse.cookies.set(c));
+  return finalResponse;
 }
