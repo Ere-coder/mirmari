@@ -73,6 +73,29 @@ export async function createOutfitItem(
   return { success: true, itemId: item.id };
 }
 
+export async function renameOutfitItem(
+  itemId: string,
+  newName: string,
+  seasonId: string
+): Promise<ActionResult> {
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
+
+  const trimmed = newName.trim();
+  if (!trimmed) return { success: false, error: 'Name cannot be empty' };
+
+  const db = createServiceClient();
+  const { error } = await db
+    .from('outfit_items')
+    .update({ name: trimmed })
+    .eq('id', itemId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath(`/admin/seasons/${seasonId}`);
+  return { success: true };
+}
+
 export async function deleteOutfitItem(
   itemId: string,
   seasonId: string

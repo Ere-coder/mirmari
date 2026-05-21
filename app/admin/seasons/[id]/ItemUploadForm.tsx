@@ -11,7 +11,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { createOutfitItem, deleteOutfitItem, assignItemToOutfit } from './actions';
+import { createOutfitItem, deleteOutfitItem, assignItemToOutfit, renameOutfitItem } from './actions';
 import { OUTFIT_ITEM_CATEGORY_LABELS } from '@/lib/types-v2';
 import type { OutfitItemCategory, OutfitItemWithImages } from '@/lib/types-v2';
 
@@ -53,10 +53,37 @@ export default function ItemUploadForm({
 
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameSaving, setRenameSaving] = useState(false);
+
   async function handleDelete(itemId: string, itemName: string) {
     if (!confirm(`Delete "${itemName}"? This can't be undone.`)) return;
     const result = await deleteOutfitItem(itemId, seasonId);
     if (!result.success) alert(`Delete failed: ${result.error}`);
+  }
+
+  function startRename(itemId: string, currentName: string) {
+    setRenamingId(itemId);
+    setRenameValue(currentName);
+  }
+
+  function cancelRename() {
+    setRenamingId(null);
+    setRenameValue('');
+  }
+
+  async function saveRename(itemId: string) {
+    if (!renameValue.trim()) return;
+    setRenameSaving(true);
+    const result = await renameOutfitItem(itemId, renameValue, seasonId);
+    setRenameSaving(false);
+    if (!result.success) {
+      alert(`Rename failed: ${result.error}`);
+      return;
+    }
+    setRenamingId(null);
+    setRenameValue('');
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -156,46 +183,121 @@ export default function ItemUploadForm({
     <div className="flex flex-col gap-3">
       {/* ── Existing items ─────────────────────────────────────────────── */}
       {!embedded && existingItems && existingItems.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col gap-3">
           {existingItems.map(item => {
-            const primaryImg = item.outfit_item_images?.find(i => i.is_primary) ?? item.outfit_item_images?.[0];
+            const images = item.outfit_item_images ?? [];
+            const sortedImages = [...images].sort((a, b) =>
+              (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0)
+            );
+            const isRenaming = renamingId === item.id;
             return (
               <div
                 key={item.id}
-                className="relative rounded-xl overflow-hidden border border-brand-dark/[0.06] bg-white"
+                className="rounded-xl border border-brand-dark/[0.06] bg-white overflow-hidden"
               >
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id, item.name)}
-                  aria-label={`Delete ${item.name}`}
-                  className="
-                    absolute top-1.5 right-1.5 z-10
-                    w-6 h-6 rounded-full
-                    bg-black/55 text-white text-[14px] leading-none
-                    flex items-center justify-center
-                    active:bg-black/75
-                  "
-                >
-                  ×
-                </button>
-                {primaryImg ? (
-                  <div className="relative w-full aspect-[3/4]">
-                    <Image
-                      src={primaryImg.url}
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                      sizes="120px"
-                    />
+                {/* Header: name + actions */}
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  {isRenaming ? (
+                    <>
+                      <input
+                        type="text"
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') { e.preventDefault(); saveRename(item.id); }
+                          else if (e.key === 'Escape') cancelRename();
+                        }}
+                        autoFocus
+                        className="
+                          flex-1 min-w-0 rounded-lg border border-brand-dark/15
+                          bg-white px-2.5 py-1.5 text-[13px] text-brand-dark
+                          focus:outline-none focus:ring-2 focus:ring-brand-accent/40
+                        "
+                      />
+                      <button
+                        type="button"
+                        onClick={() => saveRename(item.id)}
+                        disabled={renameSaving || !renameValue.trim()}
+                        className="
+                          text-[12px] font-semibold text-brand-accent
+                          disabled:opacity-40 active:opacity-70
+                        "
+                      >
+                        {renameSaving ? '…' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelRename}
+                        className="text-[12px] text-brand-dark/40 active:text-brand-dark/60"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="flex-1 min-w-0 text-[13px] font-semibold text-brand-dark truncate">
+                        {item.name}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => startRename(item.id, item.name)}
+                        aria-label={`Rename ${item.name}`}
+                        className="
+                          shrink-0 w-7 h-7 rounded-full
+                          bg-brand-surface text-brand-dark/60 text-[12px]
+                          flex items-center justify-center
+                          active:bg-brand-dark/10
+                        "
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(item.id, item.name)}
+                        aria-label={`Delete ${item.name}`}
+                        className="
+                          shrink-0 w-7 h-7 rounded-full
+                          bg-black/55 text-white text-[14px] leading-none
+                          flex items-center justify-center
+                          active:bg-black/75
+                        "
+                      >
+                        ×
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Photos: horizontal scroll, primary first */}
+                {sortedImages.length > 0 ? (
+                  <div className="flex gap-2 overflow-x-auto px-3 pb-3">
+                    {sortedImages.map(img => (
+                      <div
+                        key={img.id}
+                        className="relative shrink-0 w-20 aspect-[3/4] rounded-lg overflow-hidden bg-brand-surface"
+                      >
+                        <Image
+                          src={img.url}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                        />
+                        {img.is_primary && (
+                          <span className="absolute bottom-1 left-1 text-[8px] font-semibold uppercase tracking-wider px-1 py-0.5 rounded bg-black/55 text-white">
+                            Cover
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <div className="w-full aspect-[3/4] bg-brand-surface flex items-center justify-center">
-                    <span className="text-brand-dark/20 text-[11px]">No photo</span>
-                  </div>
+                  <div className="px-3 pb-3 text-[11px] text-brand-dark/30">No photos</div>
                 )}
-                <div className="px-2 py-2">
-                  <p className="text-[11px] font-semibold text-brand-dark truncate">{item.name}</p>
-                  <p className="text-[10px] text-brand-dark/45 mt-0.5">
+
+                {/* Meta */}
+                <div className="border-t border-brand-dark/[0.04] px-3 py-2">
+                  <p className="text-[11px] text-brand-dark/50">
                     {OUTFIT_ITEM_CATEGORY_LABELS[item.category as OutfitItemCategory]} · {item.size}
                   </p>
                 </div>

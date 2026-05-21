@@ -57,3 +57,13 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* Hide scrollbars on horizontal-scroll rows (cards / image strips) so the
+   row only shows the content, not the chrome. Scrolling still works. */
+.scrollbar-none {
+  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;  /* IE / old Edge */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;             /* Chrome / Safari */
+}
