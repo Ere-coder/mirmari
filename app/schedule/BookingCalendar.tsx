@@ -161,7 +161,7 @@ export default function BookingCalendar({ sets }: Props) {
 
       {sets.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16">
-          <p className="text-sm text-brand-dark/40">No outfit sets in the current season.</p>
+          <p className="text-sm text-brand-dark/40">No outfit sets in the current collection.</p>
         </div>
       )}
     </div>

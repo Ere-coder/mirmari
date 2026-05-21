@@ -24,7 +24,7 @@ export async function createSeason(formData: FormData): Promise<void> {
   const min_users = parseInt(formData.get('min_users') as string, 10);
 
   if (!name || isNaN(min_users)) {
-    redirect('/admin/seasons/new?error=' + encodeURIComponent('Season name and minimum users are required.'));
+    redirect('/admin/seasons/new?error=' + encodeURIComponent('Collection name and minimum users are required.'));
   }
 
   const db = createServiceClient();
@@ -35,7 +35,7 @@ export async function createSeason(formData: FormData): Promise<void> {
     .single();
 
   if (error || !season) {
-    redirect('/admin/seasons/new?error=' + encodeURIComponent(error?.message ?? 'Failed to create season.'));
+    redirect('/admin/seasons/new?error=' + encodeURIComponent(error?.message ?? 'Failed to create collection.'));
   }
 
   revalidatePath('/admin/seasons');

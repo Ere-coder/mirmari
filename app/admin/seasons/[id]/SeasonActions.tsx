@@ -168,7 +168,7 @@ export default function SeasonActions({
             {launched.usersPromoted} user{launched.usersPromoted === 1 ? '' : 's'} promoted to active
           </p>
           <p className="text-[11px] text-green-500 mt-0.5">
-            Refresh the page to see the updated season status.
+            Refresh the page to see the updated collection status.
           </p>
         </div>
       )}

@@ -42,7 +42,7 @@ export default async function SeasonsPage() {
       >
         <div className="flex-1">
           <Link href="/admin" className="text-[12px] text-brand-dark/40 mb-0.5 block">← Admin</Link>
-          <h1 className="text-[20px] font-bold text-brand-dark">Seasons</h1>
+          <h1 className="text-[20px] font-bold text-brand-dark">Collections</h1>
         </div>
         <Link
           href="/admin/seasons/new"
@@ -64,12 +64,12 @@ export default async function SeasonsPage() {
         >
           {(seasons ?? []).length === 0 ? (
             <div className="rounded-2xl bg-brand-surface px-5 py-8 text-center">
-              <p className="text-[14px] text-brand-dark/50 mb-3">No seasons yet.</p>
+              <p className="text-[14px] text-brand-dark/50 mb-3">No collections yet.</p>
               <Link
                 href="/admin/seasons/new"
                 className="text-[13px] font-semibold text-brand-accent"
               >
-                Create the first season →
+                Create the first collection →
               </Link>
             </div>
           ) : (
@@ -86,10 +86,15 @@ export default async function SeasonsPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-semibold text-brand-dark truncate">{season.name}</p>
                   <p className="text-[12px] text-brand-dark/45 mt-0.5">
-                    {new Date(season.starts_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                    {' – '}
-                    {new Date(season.ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    {' · '}min {season.min_users} users
+                    {season.starts_at && season.ends_at && (
+                      <>
+                        {new Date(season.starts_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        {' – '}
+                        {new Date(season.ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {' · '}
+                      </>
+                    )}
+                    min {season.min_users} users
                   </p>
                 </div>
                 <span className={`shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[season.status] ?? ''}`}>

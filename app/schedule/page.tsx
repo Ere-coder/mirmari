@@ -112,7 +112,7 @@ export default async function SchedulePage() {
         >
           <ScheduleHeader />
           <div className="flex-1 flex flex-col items-center justify-center px-6">
-            <StatusBlock title="Season ended" body="No active season at the moment." />
+            <StatusBlock title="Collection ended" body="No active collection at the moment." />
           </div>
         </main>
         <BottomNav />

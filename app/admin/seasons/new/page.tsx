@@ -40,9 +40,9 @@ export default async function NewSeasonPage({
         style={{ paddingTop: 'calc(1rem + var(--sat, 0px))', paddingBottom: '1rem' }}
       >
         <Link href="/admin/seasons" className="text-[12px] text-brand-dark/40 mb-0.5 block">
-          ← Seasons
+          ← Collections
         </Link>
-        <h1 className="text-[20px] font-bold text-brand-dark">New Season</h1>
+        <h1 className="text-[20px] font-bold text-brand-dark">New Collection</h1>
       </div>
 
       {/* ── Form ─────────────────────────────────────────────────────────── */}
@@ -58,7 +58,7 @@ export default async function NewSeasonPage({
             </div>
           )}
 
-          <Field label="Season name" hint="e.g. Spring 2026">
+          <Field label="Collection name" hint="e.g. Spring 2026">
             <input
               name="name"
               type="text"

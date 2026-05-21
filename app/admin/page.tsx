@@ -90,16 +90,18 @@ export default async function AdminPage() {
               <div className="rounded-2xl bg-brand-surface p-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-brand-dark/40 mb-0.5">
-                    Current Season
+                    Current Collection
                   </p>
                   <p className="text-[16px] font-semibold text-brand-dark">
                     {(activeSeason as Season).name}
                   </p>
-                  <p className="text-[12px] text-brand-dark/45 mt-0.5">
-                    {new Date((activeSeason as Season).starts_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                    {' – '}
-                    {new Date((activeSeason as Season).ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
+                  {(activeSeason as Season).starts_at && (activeSeason as Season).ends_at && (
+                    <p className="text-[12px] text-brand-dark/45 mt-0.5">
+                      {new Date((activeSeason as Season).starts_at!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      {' – '}
+                      {new Date((activeSeason as Season).ends_at!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  )}
                 </div>
                 <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[(activeSeason as Season).status] ?? ''}`}>
                   {SEASON_STATUS_LABELS[(activeSeason as Season).status]}
@@ -110,8 +112,8 @@ export default async function AdminPage() {
             <Link href="/admin/seasons/new">
               <div className="rounded-2xl border-2 border-dashed border-brand-dark/15 p-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[14px] font-medium text-brand-dark">No active season</p>
-                  <p className="text-[12px] text-brand-dark/45 mt-0.5">Create a season to get started</p>
+                  <p className="text-[14px] font-medium text-brand-dark">No active collection</p>
+                  <p className="text-[12px] text-brand-dark/45 mt-0.5">Create a collection to get started</p>
                 </div>
                 <span className="text-brand-accent text-[13px] font-semibold">New →</span>
               </div>
@@ -142,8 +144,8 @@ export default async function AdminPage() {
             {[
               {
                 href:     '/admin/seasons',
-                title:    'Seasons',
-                subtitle: 'Create and configure clothing seasons',
+                title:    'Collections',
+                subtitle: 'Create and configure clothing collections',
               },
               {
                 href:     '/admin/users',

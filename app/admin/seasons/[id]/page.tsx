@@ -121,7 +121,7 @@ export default async function SeasonDetailPage({
         style={{ paddingTop: 'calc(1rem + var(--sat, 0px))', paddingBottom: '1rem' }}
       >
         <Link href="/admin/seasons" className="text-[12px] text-brand-dark/40 mb-0.5 block">
-          ← Seasons
+          ← Collections
         </Link>
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-[20px] font-bold text-brand-dark truncate">
@@ -131,13 +131,25 @@ export default async function SeasonDetailPage({
             {SEASON_STATUS_LABELS[(season as Season).status]}
           </span>
         </div>
-        <p className="text-[12px] text-brand-dark/45 mt-0.5">
-          {new Date((season as Season).starts_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-          {' – '}
-          {new Date((season as Season).ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-          {' · min '}
-          {(season as Season).min_users} users
-        </p>
+        {(() => {
+          const s = season as Season;
+          const fmt = (d: string, opts: Intl.DateTimeFormatOptions) =>
+            new Date(d).toLocaleDateString('en-GB', opts);
+          const hasDates = !!(s.starts_at && s.ends_at);
+          return (
+            <p className="text-[12px] text-brand-dark/45 mt-0.5">
+              {hasDates && (
+                <>
+                  {fmt(s.starts_at!, { day: 'numeric', month: 'short' })}
+                  {' – '}
+                  {fmt(s.ends_at!, { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {' · '}
+                </>
+              )}
+              min {s.min_users} users
+            </p>
+          );
+        })()}
       </div>
 
       {/* ── Scrollable content ────────────────────────────────────────────── */}

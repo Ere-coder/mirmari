@@ -69,8 +69,8 @@ export type SetCode = (typeof ALL_SET_CODES)[number];
 export interface Season {
   id:           string;
   name:         string;
-  starts_at:    string;
-  ends_at:      string;
+  starts_at:    string | null;
+  ends_at:      string | null;
   min_users:    number;
   demand_level: DemandLevel;
   status:       SeasonStatus;

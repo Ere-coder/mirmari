@@ -257,7 +257,7 @@ export default async function ProfilePage() {
               >
                 <div>
                   <p className="text-[15px] font-semibold text-brand-dark">Admin dashboard</p>
-                  <p className="text-[12px] text-brand-dark/45 mt-0.5">Manage seasons, inventory and users</p>
+                  <p className="text-[12px] text-brand-dark/45 mt-0.5">Manage collections, inventory and users</p>
                 </div>
                 <span className="text-brand-dark/30 text-lg">›</span>
               </a>

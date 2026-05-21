@@ -208,7 +208,7 @@ export default async function WardrobePage() {
             {sets.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <p className="text-sm text-brand-dark/40 text-center">
-                  {season ? 'No outfit sets published yet.' : 'No active season right now.'}
+                  {season ? 'No outfit sets published yet.' : 'No active collection right now.'}
                 </p>
               </div>
             ) : (

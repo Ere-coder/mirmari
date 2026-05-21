@@ -235,8 +235,8 @@ export default function SetBuilderForm({ seasonId, seasonItems, sets }: Props) {
                         "
                       >
                         {seasonItems.length === 0
-                          ? 'No existing season items yet'
-                          : '+ Pick from season items'
+                          ? 'No existing collection items yet'
+                          : '+ Pick from collection items'
                         }
                       </button>
                     </div>
@@ -244,7 +244,7 @@ export default function SetBuilderForm({ seasonId, seasonItems, sets }: Props) {
                   {showItemPicker && (
                     <div className="rounded-xl border border-brand-dark/[0.08] overflow-hidden">
                       <div className="flex items-center justify-between px-3 py-2 bg-brand-surface border-b border-brand-dark/[0.06]">
-                        <p className="text-[12px] font-semibold text-brand-dark">Season items</p>
+                        <p className="text-[12px] font-semibold text-brand-dark">Collection items</p>
                         <button
                           type="button"
                           onClick={() => setShowItemPicker(false)}
