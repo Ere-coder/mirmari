@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
   }
 
   const profile = await getProfile(user.id);
-  const destination = profile ? safeNext : '/onboarding';
+  const destination = profile
+    ? safeNext
+    : `/onboarding?next=${encodeURIComponent(safeNext)}`;
   const finalResponse = NextResponse.redirect(`${origin}${destination}`);
   response.cookies.getAll().forEach((c) => finalResponse.cookies.set(c));
   return finalResponse;

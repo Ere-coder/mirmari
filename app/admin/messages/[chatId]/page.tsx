@@ -29,7 +29,7 @@ export default async function AdminChatThreadPage({
       .from('support_chats')
       .select(`
         id, subject, user_id,
-        profiles ( delivery_zone, district )
+        profiles ( delivery_zone )
       `)
       .eq('id', params.chatId)
       .single(),
@@ -46,9 +46,9 @@ export default async function AdminChatThreadPage({
   const subject  = chat.subject as ChatSubject;
   const chatUser = chat as unknown as {
     id: string; subject: string; user_id: string;
-    profiles: { delivery_zone: string | null; district: string | null } | null;
+    profiles: { delivery_zone: string | null } | null;
   };
-  const userName = chatUser.profiles?.delivery_zone ?? chatUser.profiles?.district ?? 'User';
+  const userName = chatUser.profiles?.delivery_zone ?? 'User';
 
   return (
     <main

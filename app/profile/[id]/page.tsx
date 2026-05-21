@@ -65,7 +65,7 @@ export default async function ProfileDetailPage({
   ] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, delivery_zone, district, size_preference, is_admin')
+      .select('id, delivery_zone, size_preference, is_admin')
       .eq('id', params.id)
       .single(),
 
@@ -102,7 +102,6 @@ export default async function ProfileDetailPage({
   const p = profile as {
     id: string;
     delivery_zone: string | null;
-    district: string | null;
     size_preference: string | null;
     is_admin: boolean;
   };
@@ -121,7 +120,7 @@ export default async function ProfileDetailPage({
   const experiences = (experiencesData ?? []) as unknown as ExpRow[];
 
   const displayName  = user.email ?? 'You';
-  const deliveryZone = p.delivery_zone ?? p.district ?? '—';
+  const deliveryZone = p.delivery_zone ?? '—';
   const subStatus    = sub?.status as SubscriptionStatus | undefined;
 
   const CONDITION_LABELS: Record<string, string> = {

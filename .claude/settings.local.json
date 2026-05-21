@@ -12,7 +12,8 @@
       "Bash(node -e \"require\\('firebase/app'\\)\")",
       "Bash(node:*)",
       "Bash(wc:*)",
-      "Bash(grep -E \"^-.*\\\\.\\(config|json|ts|js\\)$\")"
+      "Bash(grep -E \"^-.*\\\\.\\(config|json|ts|js\\)$\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('next:', d['dependencies'].get\\('next'\\)\\); print\\('@supabase/ssr:', d['dependencies'].get\\('@supabase/ssr'\\)\\); print\\('@supabase/supabase-js:', d['dependencies'].get\\('@supabase/supabase-js'\\)\\)\")"
     ]
   }
 }

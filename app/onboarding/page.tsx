@@ -7,8 +7,8 @@
  * Middleware enforces auth; if no session, user never reaches this route.
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -32,7 +32,22 @@ type DeliveryZone = (typeof DELIVERY_ZONES)[number];
 type Size = (typeof SIZES)[number];
 
 export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="screen-full items-center justify-center">
+        <span className="w-8 h-8 border-2 border-brand-plum/30 border-t-brand-plum rounded-full animate-spin" />
+      </div>
+    }>
+      <OnboardingForm />
+    </Suspense>
+  );
+}
+
+function OnboardingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get('next');
+  const destination = nextParam && nextParam.startsWith('/') ? nextParam : '/wardrobe';
   const supabaseRef = useRef<SupabaseClient | null>(null);
 
   const [name, setName] = useState('');
@@ -58,7 +73,7 @@ export default function OnboardingPage() {
         .eq('id', user.id)
         .single();
 
-      if (profile) { router.replace('/wardrobe'); return; }
+      if (profile) { router.replace(destination); return; }
 
       setCheckingProfile(false);
     }
@@ -95,7 +110,7 @@ export default function OnboardingPage() {
     if (insertError) {
       if (insertError.code === '23505') {
         // Profile already exists — proceed as if onboarding completed
-        router.push('/wardrobe');
+        router.push(destination);
         return;
       }
       console.error('[Onboarding] insert error:', insertError);
@@ -104,7 +119,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push('/subscribe');
+    router.push(destination);
   }
 
   if (checkingProfile) {
@@ -227,7 +242,7 @@ export default function OnboardingPage() {
               transition-shadow appearance-none
             "
           >
-            <option value="" disabled>Select your district</option>
+            <option value="" disabled>Select your delivery zone</option>
             {DELIVERY_ZONES.map((z) => (
               <option key={z} value={z}>{z}</option>
             ))}

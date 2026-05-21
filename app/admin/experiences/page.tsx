@@ -27,7 +27,7 @@ export default async function ExperiencesPage() {
     // Users with subscriptions
     supabase
       .from('subscriptions')
-      .select('user_id, profiles ( delivery_zone, district )')
+      .select('user_id, profiles ( delivery_zone )')
       .in('status', ['active', 'waitlisted', 'paused']),
 
     // Active sets in active season
@@ -44,20 +44,20 @@ export default async function ExperiencesPage() {
       .select(`
         id, image_url, caption, created_at,
         outfit_sets ( code ),
-        profiles ( delivery_zone, district )
+        profiles ( delivery_zone )
       `)
       .order('created_at', { ascending: false }),
   ]);
 
   type SubRow = {
     user_id: string;
-    profiles: { delivery_zone: string | null; district: string | null } | null;
+    profiles: { delivery_zone: string | null } | null;
   };
   type SetRow  = { id: string; code: string };
   type ExpRow  = {
     id: string; image_url: string; caption: string | null; created_at: string;
     outfit_sets: { code: string } | null;
-    profiles: { delivery_zone: string | null; district: string | null } | null;
+    profiles: { delivery_zone: string | null } | null;
   };
 
   const subs        = (subsData        ?? []) as unknown as SubRow[];
@@ -66,11 +66,11 @@ export default async function ExperiencesPage() {
 
   const users = subs.map(s => ({
     id:    s.user_id,
-    label: s.profiles?.delivery_zone ?? s.profiles?.district ?? s.user_id.slice(0, 8),
+    label: s.profiles?.delivery_zone ?? s.user_id.slice(0, 8),
   }));
 
   function userName(exp: ExpRow) {
-    return exp.profiles?.delivery_zone ?? exp.profiles?.district ?? '—';
+    return exp.profiles?.delivery_zone ?? '—';
   }
 
   return (

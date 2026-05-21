@@ -29,14 +29,14 @@ export default async function AdminMessagesPage() {
     .from('support_chats')
     .select(`
       id, subject, updated_at, user_id,
-      profiles ( delivery_zone, district ),
+      profiles ( delivery_zone ),
       support_messages ( content, created_at, sender_id )
     `)
     .order('updated_at', { ascending: false });
 
   type ChatRow = {
     id: string; subject: string; updated_at: string; user_id: string;
-    profiles: { delivery_zone: string | null; district: string | null } | null;
+    profiles: { delivery_zone: string | null } | null;
     support_messages: { content: string; created_at: string; sender_id: string }[];
   };
 
@@ -61,7 +61,7 @@ export default async function AdminMessagesPage() {
   }
 
   function userName(chat: ChatRow) {
-    return chat.profiles?.delivery_zone ?? chat.profiles?.district ?? chat.user_id.slice(0, 8);
+    return chat.profiles?.delivery_zone ?? chat.user_id.slice(0, 8);
   }
 
   return (

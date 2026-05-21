@@ -35,30 +35,10 @@ ALTER TABLE public.profiles
   CHECK (size_preference IN ('XS', 'S', 'M', 'L', 'XL'));
 
 
--- ── RLS: admin read-all policy ────────────────────────────────────────────────
--- Admins need to read all profiles (user management, delivery coordination).
--- The existing policy only allows users to read their own row.
--- Added here because admin features begin in v2.
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename  = 'profiles'
-      AND policyname = 'Admins can view all profiles'
-  ) THEN
-    EXECUTE $policy$
-      CREATE POLICY "Admins can view all profiles"
-        ON public.profiles
-        FOR SELECT
-        USING (
-          EXISTS (
-            SELECT 1 FROM public.profiles p
-            WHERE p.id = auth.uid() AND p.is_admin = true
-          )
-        )
-    $policy$;
-  END IF;
-END;
-$$;
+-- ── RLS: admin reads ─────────────────────────────────────────────────────────
+-- An admin-only SELECT policy here would self-reference profiles
+-- (EXISTS SELECT … FROM profiles WHERE is_admin), which Postgres treats as
+-- infinite recursion and fails the whole query. Phase 3's
+-- `profiles_select_all_authenticated USING (true)` already lets every
+-- authenticated user (including admins) read all profiles, so no extra
+-- policy is needed for v2.

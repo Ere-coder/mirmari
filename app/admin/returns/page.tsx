@@ -40,7 +40,7 @@ export default async function ReturnsPage() {
     .from('reservations')
     .select(`
       id, week_start,
-      profiles ( display_name, district, delivery_zone ),
+      profiles ( display_name, delivery_zone ),
       outfit_sets ( code ),
       return_events ( id, condition, notes, returned_at )
     `)
@@ -54,7 +54,7 @@ export default async function ReturnsPage() {
     .from('reservations')
     .select(`
       id, week_start,
-      profiles ( display_name, district, delivery_zone ),
+      profiles ( display_name, delivery_zone ),
       outfit_sets ( code ),
       return_events ( id, condition, notes, returned_at )
     `)
@@ -65,7 +65,7 @@ export default async function ReturnsPage() {
   type ResRow = {
     id:         string;
     week_start: string;
-    profiles:   { display_name: string | null; district: string | null; delivery_zone: string | null } | null;
+    profiles:   { display_name: string | null; delivery_zone: string | null } | null;
     outfit_sets: { code: string } | null;
     return_events: { id: string; condition: string; notes: string | null; returned_at: string }[] | null;
   };
@@ -77,7 +77,7 @@ export default async function ReturnsPage() {
   const returned = past.filter(r =>  (r.return_events?.length));
 
   function userName(r: ResRow) {
-    return r.profiles?.display_name ?? r.profiles?.delivery_zone ?? r.profiles?.district ?? 'Unknown';
+    return r.profiles?.display_name ?? r.profiles?.delivery_zone ?? 'Unknown';
   }
 
   function weekLabel(weekStart: string) {
