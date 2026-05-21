@@ -25,10 +25,8 @@ export async function createOutfitItem(
   seasonId: string,
   data: {
     name: string;
-    category: string;
     size: string;
     alsoFits: string[];
-    color: string;
     brand: string;
     description: string;
   },
@@ -46,10 +44,8 @@ export async function createOutfitItem(
       season_id:        seasonId,
       name:             data.name.trim(),
       description:      data.description.trim() || null,
-      category:         data.category,
       size:             data.size,
       also_fits_sizes:  data.alsoFits,
-      color:            data.color.trim(),
       brand:            data.brand.trim() || null,
     })
     .select('id')

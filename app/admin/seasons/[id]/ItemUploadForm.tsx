@@ -12,10 +12,8 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { createOutfitItem, deleteOutfitItem, assignItemToOutfit, renameOutfitItem } from './actions';
-import { OUTFIT_ITEM_CATEGORY_LABELS } from '@/lib/types-v2';
-import type { OutfitItemCategory, OutfitItemWithImages } from '@/lib/types-v2';
+import type { OutfitItemWithImages } from '@/lib/types-v2';
 
-const CATEGORIES = Object.entries(OUTFIT_ITEM_CATEGORY_LABELS) as [OutfitItemCategory, string][];
 const SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const;
 
 interface Props {
@@ -42,10 +40,8 @@ export default function ItemUploadForm({
 
   // Form fields
   const [name, setName]           = useState('');
-  const [category, setCategory]   = useState<OutfitItemCategory | ''>('');
   const [size, setSize]           = useState('');
   const [alsoFits, setAlsoFits]   = useState<string[]>([]);
-  const [color, setColor]         = useState('');
   const [brand, setBrand]         = useState('');
   const [desc, setDesc]           = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -104,7 +100,7 @@ export default function ItemUploadForm({
   }
 
   function resetForm() {
-    setName(''); setCategory(''); setSize(''); setAlsoFits([]); setColor('');
+    setName(''); setSize(''); setAlsoFits([]);
     setBrand(''); setDesc('');
     previewUrls.forEach(URL.revokeObjectURL);
     setImageFiles([]); setPreviewUrls([]);
@@ -120,7 +116,6 @@ export default function ItemUploadForm({
     e.preventDefault();
     setError(null);
 
-    if (!category)               { setError('Select a category.'); return; }
     if (!size)                   { setError('Select a size.'); return; }
     if (imageFiles.length === 0) { setError('Upload at least one photo.'); return; }
 
@@ -153,7 +148,7 @@ export default function ItemUploadForm({
     // ── Create item row ───────────────────────────────────────────────────
     const result = await createOutfitItem(
       seasonId,
-      { name, category: category as string, size, alsoFits, color, brand, description: desc },
+      { name, size, alsoFits, brand, description: desc },
       publicUrls
     );
 
@@ -298,7 +293,7 @@ export default function ItemUploadForm({
                 {/* Meta */}
                 <div className="border-t border-brand-dark/[0.04] px-3 py-2">
                   <p className="text-[11px] text-brand-dark/50">
-                    {OUTFIT_ITEM_CATEGORY_LABELS[item.category as OutfitItemCategory]} · {item.size}
+                    Size {item.size}
                   </p>
                 </div>
               </div>
@@ -397,19 +392,6 @@ export default function ItemUploadForm({
             className={inputCls}
           />
 
-          {/* Category */}
-          <select
-            value={category}
-            onChange={e => setCategory(e.target.value as OutfitItemCategory)}
-            className={inputCls}
-            required
-          >
-            <option value="" disabled>Category</option>
-            {CATEGORIES.map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
-            ))}
-          </select>
-
           {/* Size */}
           <div className="flex flex-col gap-2">
             <p className="text-[12px] font-medium text-brand-dark">Size purchased</p>
@@ -458,16 +440,6 @@ export default function ItemUploadForm({
               </div>
             </div>
           )}
-
-          {/* Color */}
-          <input
-            type="text"
-            placeholder="Color"
-            value={color}
-            onChange={e => setColor(e.target.value)}
-            required
-            className={inputCls}
-          />
 
           {/* Brand (optional) */}
           <input

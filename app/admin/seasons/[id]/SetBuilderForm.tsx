@@ -12,9 +12,8 @@
 import { useState, useTransition } from 'react';
 import Image from 'next/image';
 import { createOutfitSet, assignItemToOutfit, removeItemFromOutfit } from './actions';
-import { ALL_SET_CODES, OUTFIT_ITEM_CATEGORY_LABELS, SLOT_LABELS } from '@/lib/types-v2';
+import { ALL_SET_CODES, SLOT_LABELS } from '@/lib/types-v2';
 import type {
-  OutfitItemCategory,
   OutfitItemWithImages,
   OutfitSetWithOutfits,
 } from '@/lib/types-v2';
@@ -184,7 +183,7 @@ export default function SetBuilderForm({ seasonId, seasonItems, sets }: Props) {
                         <div className="flex-1 min-w-0">
                           <p className="text-[13px] font-medium text-brand-dark truncate">{item.name}</p>
                           <p className="text-[11px] text-brand-dark/45">
-                            {OUTFIT_ITEM_CATEGORY_LABELS[item.category as OutfitItemCategory]} · {item.size}
+                            Size {item.size}
                           </p>
                         </div>
                         <button
@@ -284,7 +283,7 @@ export default function SetBuilderForm({ seasonId, seasonItems, sets }: Props) {
                                 <div className="flex-1 text-left min-w-0">
                                   <p className="text-[13px] font-medium text-brand-dark truncate">{item.name}</p>
                                   <p className="text-[11px] text-brand-dark/45">
-                                    {OUTFIT_ITEM_CATEGORY_LABELS[item.category as OutfitItemCategory]} · {item.size}
+                                    Size {item.size}
                                   </p>
                                 </div>
                                 <span className="text-brand-accent text-[13px] font-semibold shrink-0">+</span>
