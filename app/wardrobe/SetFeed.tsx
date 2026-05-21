@@ -71,21 +71,20 @@ function SetRow({
   return (
     <section>
       <div className="px-1 mb-2 flex items-baseline justify-between">
-        <p className="text-[15px] font-bold text-brand-dark">Set {set.code}</p>
+        <p className="text-[18px] font-bold text-brand-dark">Set {set.code}</p>
         <p className="text-[10px] uppercase tracking-widest text-brand-dark/30">
           {sorted.length} outfits
         </p>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 scrollbar-none">
+      <div className="flex flex-col gap-2">
         {sorted.map(outfit => (
           <button
             key={outfit.slot}
             type="button"
             onClick={() => outfit.images.length > 0 && onOpen(outfit.slot, outfit.images, 0)}
             className="
-              shrink-0 snap-start
-              w-[42%] aspect-[3/4]
+              w-full aspect-[5/4]
               relative rounded-2xl overflow-hidden bg-brand-surface
               active:opacity-80 transition-opacity
             "
@@ -96,21 +95,21 @@ function SetRow({
                 alt={`Set ${set.code} ${SLOT_LABELS[outfit.slot]}`}
                 fill
                 className="object-cover"
-                sizes="(max-width: 480px) 42vw, 200px"
+                sizes="(max-width: 480px) 100vw, 480px"
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-brand-dark/20 text-[11px]">
+              <div className="absolute inset-0 flex items-center justify-center text-brand-dark/20 text-[12px]">
                 Empty
               </div>
             )}
-            <div className="absolute top-2 left-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-full bg-black/55 text-white">
+            <div className="absolute top-2.5 left-2.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/55 text-white">
                 {SLOT_LABELS[outfit.slot]}
               </span>
             </div>
             {outfit.images.length > 1 && (
-              <div className="absolute bottom-2 right-2">
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-black/55 text-white">
+              <div className="absolute bottom-2.5 right-2.5">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-black/55 text-white">
                   +{outfit.images.length - 1}
                 </span>
               </div>
