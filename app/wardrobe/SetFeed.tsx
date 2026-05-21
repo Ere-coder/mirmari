@@ -137,7 +137,9 @@ function FullscreenViewer({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [activeIdx, setActiveIdx] = useState(startIndex);
 
-  // Lock body scroll while open, scroll to start, and listen for Escape
+  // Lock body scroll while open, scroll to start, listen for Escape, and
+  // push a history entry so the device back gesture / browser back button
+  // closes the viewer instead of navigating away from the page.
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -149,14 +151,30 @@ function FullscreenViewer({
       });
     }
 
+    // Push a marker entry. When the user presses back, popstate fires, we
+    // close the viewer. We DON'T pop the entry ourselves here on close
+    // (closeViewer below does that), to keep things in sync.
+    window.history.pushState({ mirmariViewer: true }, '');
+
+    function handlePopState() {
+      onClose();
+    }
+    window.addEventListener('popstate', handlePopState);
+
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') window.history.back();
     }
     window.addEventListener('keydown', onKey);
 
     return () => {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('popstate', handlePopState);
+      // If the component was unmounted while our history entry is still on
+      // the stack (e.g. parent route changed), pop it so it doesn't linger.
+      if (window.history.state?.mirmariViewer) {
+        window.history.back();
+      }
     };
   }, [startIndex, onClose]);
 
@@ -188,7 +206,7 @@ function FullscreenViewer({
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => window.history.back()}
           aria-label="Close"
           className="w-9 h-9 rounded-full bg-white/10 text-white text-[18px] flex items-center justify-center active:bg-white/20"
         >
