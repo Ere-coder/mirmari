@@ -11,7 +11,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { createOutfitItem } from './actions';
+import { createOutfitItem, deleteOutfitItem } from './actions';
 import { OUTFIT_ITEM_CATEGORY_LABELS } from '@/lib/types-v2';
 import type { OutfitItemCategory, OutfitItemWithImages } from '@/lib/types-v2';
 
@@ -40,6 +40,12 @@ export default function ItemUploadForm({ seasonId, existingItems }: Props) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleDelete(itemId: string, itemName: string) {
+    if (!confirm(`Delete "${itemName}"? This can't be undone.`)) return;
+    const result = await deleteOutfitItem(itemId, seasonId);
+    if (!result.success) alert(`Delete failed: ${result.error}`);
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -116,8 +122,22 @@ export default function ItemUploadForm({ seasonId, existingItems }: Props) {
             return (
               <div
                 key={item.id}
-                className="rounded-xl overflow-hidden border border-brand-dark/[0.06] bg-white"
+                className="relative rounded-xl overflow-hidden border border-brand-dark/[0.06] bg-white"
               >
+                <button
+                  type="button"
+                  onClick={() => handleDelete(item.id, item.name)}
+                  aria-label={`Delete ${item.name}`}
+                  className="
+                    absolute top-1.5 right-1.5 z-10
+                    w-6 h-6 rounded-full
+                    bg-black/55 text-white text-[14px] leading-none
+                    flex items-center justify-center
+                    active:bg-black/75
+                  "
+                >
+                  ×
+                </button>
                 {primaryImg ? (
                   <div className="relative w-full aspect-[3/4]">
                     <Image

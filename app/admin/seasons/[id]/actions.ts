@@ -66,6 +66,39 @@ export async function createOutfitItem(
   return { success: true, itemId: item.id };
 }
 
+export async function deleteOutfitItem(
+  itemId: string,
+  seasonId: string
+): Promise<ActionResult> {
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
+
+  const db = createServiceClient();
+
+  const { data: images } = await db
+    .from('outfit_item_images')
+    .select('url')
+    .eq('item_id', itemId);
+
+  const { error } = await db.from('outfit_items').delete().eq('id', itemId);
+  if (error) return { success: false, error: error.message };
+
+  const paths = (images ?? [])
+    .map(i => {
+      const marker = '/outfit-images/';
+      const idx = i.url.indexOf(marker);
+      return idx >= 0 ? i.url.slice(idx + marker.length) : null;
+    })
+    .filter((p): p is string => !!p);
+
+  if (paths.length > 0) {
+    await db.storage.from('outfit-images').remove(paths);
+  }
+
+  revalidatePath(`/admin/seasons/${seasonId}`);
+  return { success: true };
+}
+
 // ── Outfit Sets ───────────────────────────────────────────────────────────────
 
 export async function createOutfitSet(
@@ -75,8 +108,11 @@ export async function createOutfitSet(
   const { user } = await verifyAdmin();
   if (!user) return { success: false, error: 'Unauthorized' };
 
-  const db = createServiceClient();
-  const { error } = await db.rpc('create_outfit_set', {
+  // Use the user-authed client so auth.uid() inside the RPC's is_admin()
+  // check resolves to the calling admin. The service client has no user
+  // context and would make the function raise "Forbidden".
+  const supabase = createClient();
+  const { error } = await supabase.rpc('create_outfit_set', {
     p_season_id: seasonId,
     p_code: code,
   });
@@ -140,8 +176,8 @@ export async function generateRotation(
   const { user } = await verifyAdmin();
   if (!user) return { success: false, error: 'Unauthorized' };
 
-  const db = createServiceClient();
-  const { data, error } = await db.rpc('generate_rotation_cycle', {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc('generate_rotation_cycle', {
     p_season_id: seasonId,
   });
 
@@ -167,8 +203,8 @@ export async function updateSeasonStatus(
   const { user } = await verifyAdmin();
   if (!user) return { success: false, error: 'Unauthorized' };
 
-  const db = createServiceClient();
-  const { error } = await db.rpc('update_season_status', {
+  const supabase = createClient();
+  const { error } = await supabase.rpc('update_season_status', {
     p_season_id: seasonId,
     p_status: newStatus,
   });
