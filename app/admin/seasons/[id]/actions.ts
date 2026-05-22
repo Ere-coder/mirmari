@@ -173,6 +173,30 @@ export async function assignItemToOutfit(
   return { success: true };
 }
 
+export async function setOutfitPieces(
+  outfitId: string,
+  pieces: number | null,
+  seasonId: string
+): Promise<ActionResult> {
+  const { user } = await verifyAdmin();
+  if (!user) return { success: false, error: 'Unauthorized' };
+
+  if (pieces !== null && (!Number.isInteger(pieces) || pieces < 0)) {
+    return { success: false, error: 'Pieces must be a non-negative integer.' };
+  }
+
+  const db = createServiceClient();
+  const { error } = await db
+    .from('outfits')
+    .update({ pieces })
+    .eq('id', outfitId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath(`/admin/seasons/${seasonId}`);
+  return { success: true };
+}
+
 export async function removeItemFromOutfit(
   outfitId: string,
   itemId: string,

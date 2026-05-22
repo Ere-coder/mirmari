@@ -30,6 +30,7 @@ function getThisMonday(): string {
 // Outfit slot row shape returned by the supabase joins below.
 interface RawOutfit {
   slot: 1 | 2 | 3;
+  pieces: number | null;
   outfit_composition: {
     outfit_items: {
       outfit_item_images: { url: string; is_primary: boolean }[];
@@ -52,7 +53,8 @@ function buildSetRows(rawSets: RawSet[]): SetRowData[] {
     outfits: (set.outfits ?? []).map(o => ({
       slot:       o.slot,
       images:     collectImages(o),
-      pieceCount: (o.outfit_composition ?? []).length,
+      // Admin-set value wins; falls back to actual item count.
+      pieceCount: o.pieces ?? (o.outfit_composition ?? []).length,
     })),
   }));
 }
@@ -92,7 +94,7 @@ export default async function WardrobePage() {
       .select(`
         id, code,
         outfits (
-          slot,
+          slot, pieces,
           outfit_composition (
             outfit_items (
               outfit_item_images ( url, is_primary )

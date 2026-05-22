@@ -11,7 +11,7 @@
 
 import { useState, useTransition } from 'react';
 import Image from 'next/image';
-import { createOutfitSet, assignItemToOutfit, removeItemFromOutfit } from './actions';
+import { createOutfitSet, assignItemToOutfit, removeItemFromOutfit, setOutfitPieces } from './actions';
 import { ALL_SET_CODES, SLOT_LABELS } from '@/lib/types-v2';
 import type {
   OutfitItemWithImages,
@@ -80,6 +80,18 @@ export default function SetBuilderForm({ seasonId, seasonItems, sets }: Props) {
     setActionError(null);
     startTransition(async () => {
       const result = await removeItemFromOutfit(activeOutfit.id, itemId, seasonId);
+      if (!result.success) setActionError(result.error);
+    });
+  }
+
+  function handlePiecesChange(value: string) {
+    if (!activeOutfit) return;
+    const trimmed = value.trim();
+    const pieces = trimmed === '' ? null : Number(trimmed);
+    if (pieces !== null && (!Number.isFinite(pieces) || pieces < 0)) return;
+    setActionError(null);
+    startTransition(async () => {
+      const result = await setOutfitPieces(activeOutfit.id, pieces, seasonId);
       if (!result.success) setActionError(result.error);
     });
   }
@@ -163,7 +175,33 @@ export default function SetBuilderForm({ seasonId, seasonItems, sets }: Props) {
 
                 {/* Slot content */}
                 <div className="p-4 flex flex-col gap-3">
-                  <p className="text-[11px] text-brand-dark/40">{SLOT_LABELS[activeSlot]}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-brand-dark/40">{SLOT_LABELS[activeSlot]}</p>
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor={`pieces-${activeOutfit?.id ?? 'none'}`}
+                        className="text-[11px] text-brand-dark/40"
+                      >
+                        Pieces shown to user:
+                      </label>
+                      <input
+                        id={`pieces-${activeOutfit?.id ?? 'none'}`}
+                        key={activeOutfit?.id ?? 'none'}
+                        type="number"
+                        min={0}
+                        defaultValue={activeOutfit?.pieces ?? ''}
+                        onBlur={(e) => handlePiecesChange(e.target.value)}
+                        disabled={isPending || !activeOutfit}
+                        className="
+                          w-14 rounded-lg border border-brand-dark/15
+                          bg-white px-2 py-1 text-[12px] text-brand-dark
+                          focus:outline-none focus:ring-2 focus:ring-brand-accent/40
+                          disabled:opacity-40
+                        "
+                        placeholder="auto"
+                      />
+                    </div>
+                  </div>
 
                   {/* Assigned items */}
                   {(activeOutfit?.outfit_composition ?? []).map(comp => {

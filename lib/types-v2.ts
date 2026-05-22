@@ -112,6 +112,7 @@ export interface Outfit {
   set_id: string;
   slot:   1 | 2 | 3;
   name:   string | null;
+  pieces: number | null;
 }
 
 export interface OutfitComposition {
