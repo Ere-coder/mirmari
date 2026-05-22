@@ -44,13 +44,15 @@ interface RawSet {
 
 // Build per-outfit image arrays: primary photo of each item first, then the
 // remaining photos of each item. Preserves order so the "cover" is index 0.
+// pieceCount = number of distinct items (e.g. dress = 1, top+bottom = 2).
 function buildSetRows(rawSets: RawSet[]): SetRowData[] {
   return rawSets.map(set => ({
     id:   set.id,
     code: set.code,
     outfits: (set.outfits ?? []).map(o => ({
-      slot:   o.slot,
-      images: collectImages(o),
+      slot:       o.slot,
+      images:     collectImages(o),
+      pieceCount: (o.outfit_composition ?? []).length,
     })),
   }));
 }

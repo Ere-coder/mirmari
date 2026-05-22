@@ -6,6 +6,7 @@ import Image from 'next/image';
 export interface OutfitSlotData {
   slot: 1 | 2 | 3;
   images: string[];
+  pieceCount: number;
 }
 
 export interface SetRowData {
@@ -82,6 +83,11 @@ function SetRow({
           <div key={outfit.slot} className="flex flex-col gap-1.5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-dark/40 px-1">
               {SLOT_LABELS[outfit.slot]}
+              {outfit.pieceCount > 0 && (
+                <span className="ml-2 text-brand-dark/30 normal-case font-medium tracking-normal">
+                  · {outfit.pieceCount} {outfit.pieceCount === 1 ? 'piece' : 'pieces'}
+                </span>
+              )}
             </p>
 
             {outfit.images.length === 0 ? (
